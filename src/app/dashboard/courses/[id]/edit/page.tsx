@@ -2,39 +2,32 @@
 
 import { LinkActions } from "@/components/link-actions";
 import {
+  ADD_QUESTION_LABEL,
   CUSTOMER_EVAL_LABEL,
   MANAGER_EVAL_LABEL,
-  PARTICIPATION_LABEL,
-  PARTICIPATION_TITLE_LABEL,
+  QUESTION_CONTENT_LABEL,
+  QUESTION_LIST_LABEL,
+  QUESTION_TITLE_LABEL,
   SURVEY_DATETIME_LABEL,
   SURVEY_EDIT_LABEL,
   SURVEY_INFO_LABEL,
   SURVEY_LABEL,
   SURVEY_NAME_LABEL,
   SURVEY_WEIGHT_LABEL,
-  TEAM_MEMBER_EVAL_LABEL,
 } from "@/lib/ui-labels";
 import { displayOrUnregistered } from "@/lib/default-password";
-import { GENDER_OPTIONS, formatGender } from "@/lib/gender-labels";
 import { canManageCourse } from "@/lib/permissions";
 import { parseJsonResponse } from "@/lib/parse-json-response";
-import type { Gender } from "@prisma/client";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 
-type StudentRow = {
+type QuestionRow = {
   id: string;
-  name: string;
-  birthDate: string | null;
-  gender: Gender | null;
-  occupation: string | null;
-  residenceRegion: string | null;
-  familyCount: number | null;
-  notes: string | null;
-  taskTitle: string | null;
-  presentationId: string | null;
+  title: string;
+  overview: string;
+  orderIndex: number;
 };
 
 type ObserverRow = {
@@ -44,55 +37,159 @@ type ObserverRow = {
   email: string | null;
 };
 
-function ParticipantTable({
-  title,
+function QuestionTable({
   rows,
-  variant,
-  showDelete,
+  editingId,
+  editTitle,
+  editOverview,
+  onEditStart,
+  onEditCancel,
+  onEditTitleChange,
+  onEditOverviewChange,
+  onEditSave,
   onDelete,
 }: {
-  title: string;
-  rows: StudentRow[] | ObserverRow[];
-  variant: "student" | "observer";
-  showDelete?: boolean;
-  onDelete?: (id: string) => void;
+  rows: QuestionRow[];
+  editingId: string | null;
+  editTitle: string;
+  editOverview: string;
+  onEditStart: (row: QuestionRow) => void;
+  onEditCancel: () => void;
+  onEditTitleChange: (v: string) => void;
+  onEditOverviewChange: (v: string) => void;
+  onEditSave: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
-  const colCount =
-    (variant === "student" ? 9 : 4) + (showDelete ? 1 : 0);
-
   return (
     <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
-      <h2 className="border-b border-zinc-200 px-4 py-3 font-semibold">{title}</h2>
+      <h2 className="border-b border-zinc-200 px-4 py-3 font-semibold">
+        {QUESTION_LIST_LABEL}
+      </h2>
       <table className="min-w-full text-sm">
         <thead className="border-b border-zinc-200 bg-zinc-50 text-left">
           <tr>
-            <th className="px-4 py-3 w-12">순번</th>
-            <th className="px-4 py-3">이름</th>
-            {variant === "student" ? (
-              <>
-                <th className="px-4 py-3">생년월일</th>
-                <th className="px-4 py-3">성별</th>
-                <th className="px-4 py-3">직업</th>
-                <th className="px-4 py-3">거주지역</th>
-                <th className="px-4 py-3">가족수</th>
-                <th className="px-4 py-3">기타사항</th>
-                <th className="px-4 py-3">{PARTICIPATION_TITLE_LABEL}</th>
-                <th className="px-4 py-3">조사내용</th>
-              </>
-            ) : (
-              <>
-                <th className="px-4 py-3">학과</th>
-                <th className="px-4 py-3">이메일</th>
-              </>
-            )}
-            {showDelete && <th className="px-4 py-3 w-20">관리</th>}
+            <th className="w-12 px-4 py-3">순번</th>
+            <th className="px-4 py-3">{QUESTION_TITLE_LABEL}</th>
+            <th className="px-4 py-3">{QUESTION_CONTENT_LABEL}</th>
+            <th className="px-4 py-3">첨부</th>
+            <th className="w-32 px-4 py-3">관리</th>
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={colCount} className="px-4 py-8 text-center text-zinc-500">
-                등록된 항목이 없습니다.
+              <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                등록된 질문 문항이 없습니다.
+              </td>
+            </tr>
+          ) : (
+            rows.map((row, index) => {
+              const isEditing = editingId === row.id;
+              return (
+                <tr key={row.id} className="border-b border-zinc-100">
+                  <td className="px-4 py-3">{index + 1}</td>
+                  <td className="px-4 py-3">
+                    {isEditing ? (
+                      <input
+                        value={editTitle}
+                        onChange={(e) => onEditTitleChange(e.target.value)}
+                        className="w-full rounded border border-zinc-300 px-2 py-1 text-sm"
+                      />
+                    ) : (
+                      <span className="font-medium">{row.title}</span>
+                    )}
+                  </td>
+                  <td className="max-w-md px-4 py-3">
+                    {isEditing ? (
+                      <textarea
+                        value={editOverview}
+                        onChange={(e) => onEditOverviewChange(e.target.value)}
+                        rows={2}
+                        className="w-full rounded border border-zinc-300 px-2 py-1 text-sm"
+                      />
+                    ) : (
+                      <span className="line-clamp-2">{row.overview}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/presentations/${row.id}/prep`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      PDF
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    {isEditing ? (
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => onEditSave(row.id)}
+                          className="rounded border border-blue-200 px-2 py-0.5 text-xs text-blue-700 hover:bg-blue-50"
+                        >
+                          저장
+                        </button>
+                        <button
+                          type="button"
+                          onClick={onEditCancel}
+                          className="rounded border border-zinc-200 px-2 py-0.5 text-xs hover:bg-zinc-50"
+                        >
+                          취소
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => onEditStart(row)}
+                          className="rounded border border-zinc-200 px-2 py-0.5 text-xs hover:bg-zinc-50"
+                        >
+                          편집
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDelete(row.id)}
+                          className="rounded border border-red-200 px-2 py-0.5 text-xs text-red-700 hover:bg-red-50"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function CustomerTable({
+  rows,
+  onDelete,
+}: {
+  rows: ObserverRow[];
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+      <h2 className="border-b border-zinc-200 px-4 py-3 font-semibold">고객 목록</h2>
+      <table className="min-w-full text-sm">
+        <thead className="border-b border-zinc-200 bg-zinc-50 text-left">
+          <tr>
+            <th className="w-12 px-4 py-3">순번</th>
+            <th className="px-4 py-3">이름</th>
+            <th className="px-4 py-3">이메일</th>
+            <th className="w-20 px-4 py-3">관리</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={4} className="px-4 py-8 text-center text-zinc-500">
+                등록된 고객이 없습니다.
               </td>
             </tr>
           ) : (
@@ -100,63 +197,18 @@ function ParticipantTable({
               <tr key={row.id} className="border-b border-zinc-100">
                 <td className="px-4 py-3">{index + 1}</td>
                 <td className="px-4 py-3 font-medium">{row.name}</td>
-                {variant === "student" ? (
-                  <>
-                    <td className="px-4 py-3">
-                      {displayOrUnregistered((row as StudentRow).birthDate)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {formatGender((row as StudentRow).gender)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {displayOrUnregistered((row as StudentRow).occupation)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {displayOrUnregistered((row as StudentRow).residenceRegion)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {(row as StudentRow).familyCount ?? "—"}
-                    </td>
-                    <td className="px-4 py-3 max-w-[12rem] truncate" title={(row as StudentRow).notes ?? ""}>
-                      {displayOrUnregistered((row as StudentRow).notes)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {displayOrUnregistered((row as StudentRow).taskTitle)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {(row as StudentRow).presentationId ? (
-                        <Link
-                          href={`/presentations/${(row as StudentRow).presentationId}/prep`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          {(row as StudentRow).taskTitle ? "편집" : "등록"}
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td className="px-4 py-3">
-                      {displayOrUnregistered((row as ObserverRow).department)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {displayOrUnregistered((row as ObserverRow).email)}
-                    </td>
-                  </>
-                )}
-                {showDelete && onDelete && (
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => onDelete(row.id)}
-                      className="rounded border border-red-200 px-2 py-0.5 text-xs text-red-700 hover:bg-red-50"
-                    >
-                      삭제
-                    </button>
-                  </td>
-                )}
+                <td className="px-4 py-3">
+                  {displayOrUnregistered(row.email)}
+                </td>
+                <td className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => onDelete(row.id)}
+                    className="rounded border border-red-200 px-2 py-0.5 text-xs text-red-700 hover:bg-red-50"
+                  >
+                    삭제
+                  </button>
+                </td>
               </tr>
             ))
           )}
@@ -173,12 +225,14 @@ export default function EvaluationEditPage() {
   const courseId = params.id as string;
   const [courseName, setCourseName] = useState("");
   const [courseJoinUrl, setCourseJoinUrl] = useState("");
-  const [students, setStudents] = useState<StudentRow[]>([]);
+  const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [observers, setObservers] = useState<ObserverRow[]>([]);
-  const [studentName, setStudentName] = useState("");
-  const [studentBirthDate, setStudentBirthDate] = useState("");
-  const [studentGender, setStudentGender] = useState<Gender | "">("");
+  const [questionTitle, setQuestionTitle] = useState("");
+  const [questionOverview, setQuestionOverview] = useState("");
   const [observerName, setObserverName] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editOverview, setEditOverview] = useState("");
   const [editName, setEditName] = useState("");
   const [editDateTime, setEditDateTime] = useState("");
   const [weightPeer, setWeightPeer] = useState(50);
@@ -188,9 +242,9 @@ export default function EvaluationEditPage() {
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const [courseRes, studentsRes, observersRes] = await Promise.all([
+    const [courseRes, questionsRes, observersRes] = await Promise.all([
       fetch(`/api/courses/${courseId}`),
-      fetch(`/api/courses/${courseId}/students`),
+      fetch(`/api/courses/${courseId}/questions`),
       fetch(`/api/courses/${courseId}/observers`),
     ]);
 
@@ -207,20 +261,14 @@ export default function EvaluationEditPage() {
       const json = await parseJsonResponse<{ error?: string }>(courseRes);
       setError(json?.error ?? `${SURVEY_INFO_LABEL}를 불러오지 못했습니다.`);
     }
-    if (studentsRes.ok) {
-      const list = await studentsRes.json();
-      setStudents(
-        list.map((s: StudentRow) => ({
-          id: s.id,
-          name: s.name,
-          birthDate: s.birthDate,
-          gender: s.gender,
-          occupation: s.occupation,
-          residenceRegion: s.residenceRegion,
-          familyCount: s.familyCount,
-          notes: s.notes,
-          taskTitle: s.taskTitle ?? null,
-          presentationId: s.presentationId ?? null,
+    if (questionsRes.ok) {
+      const list = await questionsRes.json();
+      setQuestions(
+        list.map((q: QuestionRow) => ({
+          id: q.id,
+          title: q.title ?? "",
+          overview: q.overview ?? "",
+          orderIndex: q.orderIndex,
         }))
       );
     }
@@ -257,26 +305,56 @@ export default function EvaluationEditPage() {
     return <div className="mx-auto max-w-6xl px-4 py-10">불러오는 중...</div>;
   }
 
-  async function addStudent(e: React.FormEvent) {
+  async function addQuestion(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    const res = await fetch(`/api/courses/${courseId}/students`, {
+    const res = await fetch(`/api/courses/${courseId}/questions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: studentName,
-        birthDate: studentBirthDate,
-        gender: studentGender,
+        title: questionTitle,
+        overview: questionOverview,
       }),
     });
     const json = await parseJsonResponse<{ error?: string }>(res);
     if (!res.ok) {
-      setError(json?.error ?? "고객 등록 실패");
+      setError(json?.error ?? "질문 등록 실패");
       return;
     }
-    setStudentName("");
-    setStudentBirthDate("");
-    setStudentGender("");
+    setQuestionTitle("");
+    setQuestionOverview("");
+    load();
+  }
+
+  async function saveQuestionEdit(id: string) {
+    setError("");
+    const res = await fetch(`/api/courses/${courseId}/questions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: editTitle, overview: editOverview }),
+    });
+    const json = await parseJsonResponse<{ error?: string }>(res);
+    if (!res.ok) {
+      setError(json?.error ?? "질문 수정 실패");
+      return;
+    }
+    setEditingId(null);
+    load();
+  }
+
+  async function deleteQuestion(questionId: string) {
+    if (!window.confirm("이 질문 문항을 삭제할까요? 관련 의견 기록도 함께 삭제됩니다.")) {
+      return;
+    }
+    setError("");
+    const res = await fetch(`/api/courses/${courseId}/questions/${questionId}`, {
+      method: "DELETE",
+    });
+    const json = await parseJsonResponse<{ error?: string }>(res);
+    if (!res.ok) {
+      setError(json?.error ?? "삭제 실패");
+      return;
+    }
     load();
   }
 
@@ -290,7 +368,7 @@ export default function EvaluationEditPage() {
     });
     const json = await parseJsonResponse<{ error?: string }>(res);
     if (!res.ok) {
-      setError(json?.error ?? "팀멤버 등록 실패");
+      setError(json?.error ?? "고객 등록 실패");
       return;
     }
     setObserverName("");
@@ -298,7 +376,7 @@ export default function EvaluationEditPage() {
   }
 
   async function deleteObserver(observerId: string) {
-    if (!window.confirm("이 팀멤버를 목록에서 삭제할까요?")) {
+    if (!window.confirm("이 고객을 목록에서 삭제할까요?")) {
       return;
     }
     setError("");
@@ -313,25 +391,11 @@ export default function EvaluationEditPage() {
     load();
   }
 
-  async function deleteStudent(studentId: string) {
-    if (!window.confirm(`이 고객을 목록에서 삭제할까요? 관련 ${PARTICIPATION_LABEL}·의견 기록도 함께 삭제됩니다.`)) {
-      return;
-    }
-    setError("");
-    const res = await fetch(`/api/courses/${courseId}/students/${studentId}`, {
-      method: "DELETE",
-    });
-    const json = await parseJsonResponse<{ error?: string }>(res);
-    if (!res.ok) {
-      setError(json?.error ?? "삭제 실패");
-      return;
-    }
-    load();
-  }
-
   async function saveAndReturn() {
     if (!editName.trim() || !editDateTime.trim() || weightSum === 0) {
-      setError(`${SURVEY_NAME_LABEL}, ${SURVEY_DATETIME_LABEL}를 입력하고 ${SURVEY_WEIGHT_LABEL} 합계는 0보다 커야 합니다.`);
+      setError(
+        `${SURVEY_NAME_LABEL}, ${SURVEY_DATETIME_LABEL}를 입력하고 ${SURVEY_WEIGHT_LABEL} 합계는 0보다 커야 합니다.`
+      );
       return;
     }
 
@@ -391,10 +455,7 @@ export default function EvaluationEditPage() {
           type="button"
           onClick={saveAndReturn}
           disabled={
-            saving ||
-            weightSum === 0 ||
-            !editName.trim() ||
-            !editDateTime.trim()
+            saving || weightSum === 0 || !editName.trim() || !editDateTime.trim()
           }
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
@@ -424,7 +485,7 @@ export default function EvaluationEditPage() {
         </div>
         {courseJoinUrl && (
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-            <p className="text-sm font-semibold">접속 링크 (고객·팀멤버 공통)</p>
+            <p className="text-sm font-semibold">접속 링크 (고객 공통)</p>
             <p className="mt-2 break-all font-mono text-xs text-zinc-700">{courseJoinUrl}</p>
             <div className="mt-3">
               <LinkActions url={courseJoinUrl} label={editName || courseName} />
@@ -435,7 +496,7 @@ export default function EvaluationEditPage() {
           <h3 className="text-sm font-semibold">{SURVEY_WEIGHT_LABEL} 조정 (%)</h3>
           <div className="mt-3 grid gap-4 md:grid-cols-3">
             <label className="text-sm">
-              {CUSTOMER_EVAL_LABEL}(동료) 평균
+              {CUSTOMER_EVAL_LABEL}
               <input
                 type="number"
                 min={0}
@@ -446,7 +507,7 @@ export default function EvaluationEditPage() {
               />
             </label>
             <label className="text-sm">
-              {TEAM_MEMBER_EVAL_LABEL}
+              보조 가중치
               <input
                 type="number"
                 min={0}
@@ -473,82 +534,65 @@ export default function EvaluationEditPage() {
       </div>
 
       <div className="mb-6 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        고객 추가 시 <strong>이름·생년월일·성별</strong>은 필수입니다. 고객은 회원가입 없이{" "}
+        <strong>{ADD_QUESTION_LABEL}</strong>로 조사 질문을 등록·편집합니다. 평가 고객은{" "}
         <Link href="/login/customer" className="underline">
           고객 접속 화면
         </Link>
-        에서 이름만 입력해 접속합니다. 조사 내용은 <strong>조사내용</strong> 열에서 등록합니다.
+        에서 이름만 입력해 접속합니다.
       </div>
 
       <div className="mb-8 space-y-4">
         <form
-          onSubmit={addStudent}
-          className="flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-white p-4"
+          onSubmit={addQuestion}
+          className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4"
         >
-          <div className="min-w-[10rem] flex-1">
-            <label className="text-sm font-medium">
-              이름 <span className="text-red-600">*</span>
-            </label>
-            <input
-              placeholder="고객 이름"
-              required
-              value={studentName}
-              onChange={(e) => setStudentName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div className="min-w-[10rem] flex-1">
-            <label className="text-sm font-medium">
-              생년월일 <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="date"
-              required
-              value={studentBirthDate}
-              onChange={(e) => setStudentBirthDate(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div className="min-w-[8rem] flex-1">
-            <label className="text-sm font-medium">
-              성별 <span className="text-red-600">*</span>
-            </label>
-            <select
-              required
-              value={studentGender}
-              onChange={(e) => setStudentGender(e.target.value as Gender | "")}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            >
-              <option value="">선택</option>
-              {GENDER_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <p className="text-sm font-medium">{ADD_QUESTION_LABEL}</p>
+          <input
+            placeholder={QUESTION_TITLE_LABEL}
+            required
+            value={questionTitle}
+            onChange={(e) => setQuestionTitle(e.target.value)}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          />
+          <textarea
+            placeholder={QUESTION_CONTENT_LABEL}
+            required
+            rows={3}
+            value={questionOverview}
+            onChange={(e) => setQuestionOverview(e.target.value)}
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          />
           <button
             type="submit"
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800"
           >
-            고객 추가
+            {ADD_QUESTION_LABEL}
           </button>
         </form>
-        <ParticipantTable
-          title="고객 목록"
-          rows={students}
-          variant="student"
-          showDelete
-          onDelete={deleteStudent}
+        <QuestionTable
+          rows={questions}
+          editingId={editingId}
+          editTitle={editTitle}
+          editOverview={editOverview}
+          onEditStart={(row) => {
+            setEditingId(row.id);
+            setEditTitle(row.title);
+            setEditOverview(row.overview);
+          }}
+          onEditCancel={() => setEditingId(null)}
+          onEditTitleChange={setEditTitle}
+          onEditOverviewChange={setEditOverview}
+          onEditSave={saveQuestionEdit}
+          onDelete={deleteQuestion}
         />
       </div>
 
       <div className="space-y-4">
         <form onSubmit={addObserver} className="flex flex-wrap items-end gap-2">
-          <div className="flex-1 min-w-[200px]">
-            <label className="text-sm font-medium">팀멤버 추가 (이름만)</label>
+          <div className="min-w-[200px] flex-1">
+            <label className="text-sm font-medium">고객 추가 (이름만)</label>
             <input
-              placeholder="팀멤버 이름"
+              placeholder="평가 고객 이름"
               required
               value={observerName}
               onChange={(e) => setObserverName(e.target.value)}
@@ -559,16 +603,10 @@ export default function EvaluationEditPage() {
             type="submit"
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
           >
-            팀멤버 추가
+            고객 추가
           </button>
         </form>
-        <ParticipantTable
-          title="팀멤버 목록"
-          rows={observers}
-          variant="observer"
-          showDelete
-          onDelete={deleteObserver}
-        />
+        <CustomerTable rows={observers} onDelete={deleteObserver} />
       </div>
     </div>
   );

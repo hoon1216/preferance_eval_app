@@ -1,71 +1,42 @@
 import { DEFAULT_INITIAL_PASSWORD } from "../src/lib/default-password";
 import bcrypt from "bcryptjs";
-import { Gender, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const demoStudents: {
-  name: string;
-  birthDate: string;
-  gender: Gender;
-  occupation?: string;
-  residenceRegion?: string;
-  familyCount?: number;
-}[] = [
+const demoCustomers = ["이고객", "박고객", "최고객"];
+
+const demoQuestions = [
   {
-    name: "이고객",
-    birthDate: "1990-03-12",
-    gender: "MALE",
-    occupation: "회사원",
-    residenceRegion: "서울",
-    familyCount: 3,
+    title: "제품 사용 경험은 어떠셨나요?",
+    overview:
+      "최근 이용하신 서비스의 전반적인 사용 경험과 만족도에 대해 자유롭게 의견을 남겨주세요.",
   },
   {
-    name: "박고객",
-    birthDate: "1985-07-22",
-    gender: "FEMALE",
-    occupation: "자영업",
-    residenceRegion: "경기",
-    familyCount: 4,
-  },
-  {
-    name: "최고객",
-    birthDate: "1992-11-05",
-    gender: "FEMALE",
-    residenceRegion: "부산",
-    familyCount: 2,
+    title: "개선이 필요한 부분은 무엇인가요?",
+    overview:
+      "불편했던 점이나 개선되면 좋겠다고 생각하는 기능·디자인·절차 등을 구체적으로 적어주세요.",
   },
 ];
 
-async function upsertStudent(
-  passwordHash: string,
-  data: (typeof demoStudents)[number]
-) {
+async function upsertCustomer(passwordHash: string, name: string) {
   const existing = await prisma.user.findFirst({
-    where: { role: "STUDENT", name: data.name },
+    where: { role: "OBSERVER_PROFESSOR", name },
   });
 
   if (existing) {
     return prisma.user.update({
       where: { id: existing.id },
-      data: {
-        ...data,
-        email: null,
-        studentId: null,
-        profileComplete: true,
-        passwordHash,
-      },
+      data: { profileComplete: true, passwordHash },
     });
   }
 
   return prisma.user.create({
     data: {
-      ...data,
-      role: "STUDENT",
+      name,
+      role: "OBSERVER_PROFESSOR",
       passwordHash,
       profileComplete: true,
-      email: null,
-      studentId: null,
     },
   });
 }
@@ -85,8 +56,8 @@ async function main() {
     },
   });
 
-  const students = await Promise.all(
-    demoStudents.map((s) => upsertStudent(passwordHash, s))
+  const customers = await Promise.all(
+    demoCustomers.map((name) => upsertCustomer(passwordHash, name))
   );
 
   const course = await prisma.course.upsert({
@@ -100,62 +71,79 @@ async function main() {
     },
   });
 
-  for (const student of students) {
-    await prisma.courseEnrollment.upsert({
-      where: {
-        courseId_studentId: { courseId: course.id, studentId: student.id },
-      },
-      update: {},
-      create: { courseId: course.id, studentId: student.id },
+  for (const customer of customers) {
+    const existingSlot = await prisma.courseObserver.findFirst({
+      where: { courseId: course.id, name: customer.name },
     });
-
-    await prisma.presentation.upsert({
-      where: {
-        courseId_presenterId: {
+    if (existingSlot) {
+      await prisma.courseObserver.update({
+        where: { id: existingSlot.id },
+        data: { userId: customer.id },
+      });
+    } else {
+      await prisma.courseObserver.create({
+        data: {
           courseId: course.id,
-          presenterId: student.id,
+          name: customer.name,
+          userId: customer.id,
         },
-      },
-      update: {},
-      create: {
-        courseId: course.id,
-        presenterId: student.id,
-        orderIndex: students.indexOf(student),
-      },
-    });
+      });
+    }
   }
 
-  const presentation = await prisma.presentation.findFirst({
-    where: { courseId: course.id, presenterId: students[0].id },
+  await prisma.presentation.deleteMany({
+    where: { courseId: course.id, presenterId: { not: null } },
   });
 
-  if (presentation) {
-    await prisma.presentation.update({
-      where: { id: presentation.id },
-      data: {
-        title: "스마트 홈 IoT 프로토타입",
-        overview:
-          "일상 생활 공간의 에너지 사용을 최적화하는 IoT 기반 스마트 홈 솔루션입니다.",
-        status: "READY",
-      },
+  for (let i = 0; i < demoQuestions.length; i++) {
+    const q = demoQuestions[i];
+    const existing = await prisma.presentation.findFirst({
+      where: { courseId: course.id, presenterId: null, title: q.title },
     });
 
-    await prisma.evaluation.deleteMany({ where: { presentationId: presentation.id } });
+    if (existing) {
+      await prisma.presentation.update({
+        where: { id: existing.id },
+        data: { overview: q.overview, orderIndex: i, status: "READY" },
+      });
+    } else {
+      await prisma.presentation.create({
+        data: {
+          courseId: course.id,
+          presenterId: null,
+          title: q.title,
+          overview: q.overview,
+          orderIndex: i,
+          status: "READY",
+        },
+      });
+    }
+  }
+
+  const firstQuestion = await prisma.presentation.findFirst({
+    where: { courseId: course.id, presenterId: null },
+    orderBy: { orderIndex: "asc" },
+  });
+
+  if (firstQuestion) {
+    await prisma.evaluation.deleteMany({
+      where: { presentationId: firstQuestion.id },
+    });
     await prisma.evaluation.createMany({
       data: [
         {
-          presentationId: presentation.id,
-          evaluatorId: students[1].id,
+          presentationId: firstQuestion.id,
+          evaluatorId: customers[1].id,
           empathyScore: 8,
-          reason: "문제 정의가 명확하고 사용자 시나리오가 설득력 있습니다.",
-          suggestions: "실제 사용자 테스트 데이터를 추가하면 좋겠습니다.",
+          reason: "질문이 명확하고 응답하기 편했습니다.",
+          suggestions: "선택지 예시를 추가하면 더 좋겠습니다.",
         },
         {
-          presentationId: presentation.id,
-          evaluatorId: students[2].id,
+          presentationId: firstQuestion.id,
+          evaluatorId: customers[2].id,
           empathyScore: 7,
-          reason: "기술 구현과 디자인 방향이 잘 맞습니다.",
-          suggestions: "비용 구조와 상용화 로드맵을 보완해주세요.",
+          reason: "전반적으로 이해하기 쉬운 문항입니다.",
+          suggestions: "응답 시간 안내를 넣어주세요.",
         },
       ],
     });
@@ -163,7 +151,7 @@ async function main() {
 
   console.log("Seed complete.");
   console.log(`담당자: 김담당 / ${DEFAULT_INITIAL_PASSWORD}`);
-  console.log("고객: 이고객, 박고객, 최고객 (이름만으로 접속)");
+  console.log("고객(평가자): 이고객, 박고객, 최고객 (이름만으로 접속)");
 }
 
 main()

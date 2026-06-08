@@ -26,6 +26,7 @@ export async function courseHasStudentWithName(courseId: string, rawName: string
   });
   return presentations.some(
     (p) =>
+      p.presenter &&
       p.presenter.role === "STUDENT" &&
       normalizeParticipantName(p.presenter.name) === key
   );
@@ -80,6 +81,7 @@ export async function findStudentParticipantByName(courseId: string, rawName: st
 
   const presenterMatches = presentations.filter(
     (p) =>
+      p.presenter &&
       p.presenter.role === "STUDENT" &&
       normalizeParticipantName(p.presenter.name) === key
   );
@@ -90,6 +92,7 @@ export async function findStudentParticipantByName(courseId: string, rawName: st
 
   if (presenterMatches.length === 1) {
     const presenter = presenterMatches[0].presenter;
+    if (!presenter) return null;
     await ensureStudentEnrollment(courseId, presenter.id);
     return {
       type: "STUDENT" as const,

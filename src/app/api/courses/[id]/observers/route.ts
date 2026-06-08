@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { hashInitialPassword } from "@/lib/default-password";
 import { normalizeParticipantName } from "@/lib/participant-name";
 import { canManageCourse } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -27,13 +28,27 @@ export async function POST(request: Request, { params }: Params) {
 
   try {
     const { randomUUID } = await import("crypto");
+    const passwordHash = await hashInitialPassword();
+    const user = await prisma.user.create({
+      data: {
+        name,
+        role: "OBSERVER_PROFESSOR",
+        passwordHash,
+        profileComplete: true,
+      },
+    });
     const observer = await prisma.courseObserver.create({
-      data: { courseId, name, accessToken: randomUUID() },
+      data: {
+        courseId,
+        name,
+        userId: user.id,
+        accessToken: randomUUID(),
+      },
     });
     return NextResponse.json(observer, { status: 201 });
   } catch {
     return NextResponse.json(
-      { error: "같은 이름의 팀멤버가 이미 등록되어 있습니다." },
+      { error: "같은 이름의 고객이 이미 등록되어 있습니다." },
       { status: 400 }
     );
   }

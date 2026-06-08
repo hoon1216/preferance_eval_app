@@ -69,10 +69,8 @@ export async function POST(request: Request, { params }: Params) {
 
     await ensureStudentEnrollment(courseId, student.id);
 
-    const existingPresentation = await prisma.presentation.findUnique({
-      where: {
-        courseId_presenterId: { courseId, presenterId: student.id },
-      },
+    const existingPresentation = await prisma.presentation.findFirst({
+      where: { courseId, presenterId: student.id },
     });
     if (!existingPresentation) {
       const count = await prisma.presentation.count({ where: { courseId } });
@@ -183,6 +181,7 @@ async function getStudents(_request: Request, { params }: Params) {
   const taskTitleByStudent = new Map<string, string | null>();
   const presentationIdByStudent = new Map<string, string>();
   for (const p of presentations) {
+    if (!p.presenterId) continue;
     if (!taskTitleByStudent.has(p.presenterId)) {
       taskTitleByStudent.set(p.presenterId, p.title);
       presentationIdByStudent.set(p.presenterId, p.id);
@@ -227,7 +226,7 @@ async function getStudents(_request: Request, { params }: Params) {
   }
 
   for (const p of presentations) {
-    if (p.presenter.role !== "STUDENT") continue;
+    if (!p.presenter || p.presenter.role !== "STUDENT") continue;
     if (!studentMap.has(p.presenter.id)) {
       studentMap.set(p.presenter.id, {
         id: p.presenter.id,

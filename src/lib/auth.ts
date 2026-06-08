@@ -67,9 +67,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         let user: (typeof candidates)[number] | null = null;
 
-        if (expectedRole === "STUDENT") {
-          if (nameMatches.length !== 1) return null;
-          user = nameMatches[0];
+        if (
+          expectedRole === "STUDENT" ||
+          (expectedRole === "OBSERVER_PROFESSOR" && loginRole === "OBSERVER")
+        ) {
+          if (!password) {
+            if (nameMatches.length !== 1) return null;
+            user = nameMatches[0];
+          } else {
+            for (const candidate of nameMatches) {
+              if (await bcrypt.compare(password, candidate.passwordHash)) {
+                user = candidate;
+                break;
+              }
+            }
+            if (!user) return null;
+          }
         } else {
           if (!password) return null;
           for (const candidate of nameMatches) {

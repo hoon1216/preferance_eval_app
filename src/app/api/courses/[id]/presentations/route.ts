@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sortPresentationsByPresenterName } from "@/lib/sort-presentations";
+import { sortPresentationsByOrderIndex } from "@/lib/sort-presentations";
+import { surveyQuestionFilter } from "@/lib/survey-questions";
+import { findObserverSlotForUser } from "@/lib/observer-courses";
 import { NextResponse } from "next/server";
 
 type Params = { params: Promise<{ id: string }> };
@@ -61,28 +63,29 @@ export async function GET(_request: Request, { params }: Params) {
 
   const { id: courseId } = await params;
 
-  const course =
-    session.user.role === "PROFESSOR"
-      ? await prisma.course.findFirst({
-          where: { id: courseId, professorId: session.user.id },
-        })
-      : (
-          await prisma.courseEnrollment.findFirst({
-            where: { courseId, studentId: session.user.id },
-            include: { course: true },
-          })
-        )?.course;
+  let course = null;
+  if (session.user.role === "PROFESSOR") {
+    course = await prisma.course.findFirst({
+      where: { id: courseId, professorId: session.user.id },
+    });
+  } else if (session.user.role === "OBSERVER_PROFESSOR") {
+    const slot = await findObserverSlotForUser(courseId, session.user.id);
+    if (slot) {
+      course = await prisma.course.findUnique({ where: { id: courseId } });
+    }
+  }
 
   if (!course) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const presentations = await prisma.presentation.findMany({
-    where: { courseId },
+    where: { courseId, ...surveyQuestionFilter },
     include: {
       presenter: { select: { id: true, name: true, studentId: true } },
     },
+    orderBy: [{ orderIndex: "asc" }, { createdAt: "asc" }],
   });
 
-  return NextResponse.json(sortPresentationsByPresenterName(presentations));
+  return NextResponse.json(sortPresentationsByOrderIndex(presentations));
 }

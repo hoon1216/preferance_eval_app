@@ -74,8 +74,8 @@ async function getFeedbackPdf(_request: Request, { params }: Params) {
     CombinedFeedbackPdfDocument({
       courseName: presentation.course.name,
       semester: presentation.course.semester,
-      presenterName: presentation.presenter.name,
-      presenterStudentId: presentation.presenter.studentId ?? "미등록",
+      presenterName: presentation.presenter?.name ?? presentation.title ?? "질문",
+      presenterStudentId: presentation.presenter?.studentId ?? "—",
       title: presentation.title ?? "제목 미입력",
       studentEvaluations: peerEvaluations.map((e) =>
         evaluationContentFromParts(e.reason, e.suggestions)
@@ -93,7 +93,7 @@ async function getFeedbackPdf(_request: Request, { params }: Params) {
   );
 
   const filename = encodeURIComponent(
-    `${presentation.presenter.name}_조사종합_${presentation.title ?? "참여"}.pdf`
+    `${presentation.title ?? presentation.presenter?.name ?? "조사"}_조사종합.pdf`
   );
 
   return new NextResponse(new Uint8Array(buffer), {

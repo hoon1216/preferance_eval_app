@@ -4,8 +4,8 @@ export type Role = "PROFESSOR" | "STUDENT" | "OBSERVER_PROFESSOR";
 
 export const ROLE_LABELS: Record<Role, string> = {
   PROFESSOR: "담당자",
-  OBSERVER_PROFESSOR: "팀멤버",
-  STUDENT: "고객",
+  OBSERVER_PROFESSOR: "고객",
+  STUDENT: "참여자",
 };
 
 export type LoginRoleKey = "PROFESSOR" | "STUDENT" | "OBSERVER";
@@ -44,7 +44,7 @@ export function canViewCourseResults(role: string) {
 }
 
 export function canPeerEvaluate(role: string) {
-  return isStudent(role);
+  return isObserverProfessor(role);
 }
 
 export function canObserverEvaluate(role: string) {

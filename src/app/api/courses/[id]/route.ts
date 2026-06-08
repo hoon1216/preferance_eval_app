@@ -2,7 +2,8 @@ import { auth } from "@/lib/auth";
 import { ensureCourseAccessToken } from "@/lib/course-access";
 import { enrichPresentationsForResults } from "@/lib/course-results";
 import { mergeProfessorFieldsBatch } from "@/lib/presentation-professor-fields";
-import { sortPresentationsByPresenterName } from "@/lib/sort-presentations";
+import { sortPresentationsByOrderIndex } from "@/lib/sort-presentations";
+import { surveyQuestionFilter } from "@/lib/survey-questions";
 import { normalizeWeights } from "@/lib/grades";
 import { getCourseForUser, isLeadProfessor } from "@/lib/permissions";
 import { presentationPdfFileExists } from "@/lib/presentation-pdf-storage";
@@ -34,7 +35,7 @@ export async function GET(_request: Request, { params }: Params) {
   });
 
   const presentations = await prisma.presentation.findMany({
-    where: { courseId: id },
+    where: { courseId: id, ...surveyQuestionFilter },
     include: {
       presenter: {
         select: {
@@ -74,7 +75,7 @@ export async function GET(_request: Request, { params }: Params) {
     }))
   );
 
-  const sortedPresentations = sortPresentationsByPresenterName(withPdfFlags);
+  const sortedPresentations = sortPresentationsByOrderIndex(withPdfFlags);
 
   let coursePayload: typeof course & {
     joinUrl?: string;

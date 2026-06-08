@@ -2,6 +2,12 @@
 
 export const SURVEY_LIST_LABEL = "조사목록";
 export const PARTICIPANT_CUSTOMERS_LABEL = "참여고객";
+export const QUESTION_LIST_LABEL = "질문 문항";
+export const QUESTION_TITLE_LABEL = "질문 제목";
+export const QUESTION_CONTENT_LABEL = "질문 내용";
+export const ADD_QUESTION_LABEL = "질문 문항 추가";
+export const QUESTION_COUNT_LABEL = "질문 문항";
+export const CUSTOMER_COUNT_LABEL = "평가 고객";
 
 export const SURVEY_LABEL = "조사";
 export const SURVEY_NAME_LABEL = "조사명";
@@ -30,5 +36,5 @@ export const RATE_SUBMIT_LABEL = "의견 제출";
 export const CONTINUE_RATE_LABEL = "이어서 등록";
 
 export const CUSTOMER_EVAL_LABEL = "고객 의견";
-export const TEAM_MEMBER_EVAL_LABEL = "팀멤버 의견";
+export const TEAM_MEMBER_EVAL_LABEL = "고객 의견";
 export const MANAGER_EVAL_LABEL = "담당자 의견";

@@ -11,8 +11,12 @@ const cellX = "px-2";
 const headerY = "py-3";
 const bodyY = "py-2";
 
-/** # · 이름 · 생년월일 · 성별 · 참여 · 첨부자료 · 의견 */
+/** # · 질문 · 내용 · 첨부자료 · 의견 */
 export const LEFT_LIST_GRID =
+  "grid-cols-[2.15rem_minmax(8rem,2fr)_minmax(11rem,2.5fr)_5.175rem_5.175rem]";
+
+/** 레거시 참여자 목록 */
+export const LEFT_LIST_GRID_LEGACY =
   "grid-cols-[2.15rem_minmax(4.5rem,5.5rem)_4.5rem_2.5rem_minmax(11rem,2.5fr)_5.175rem_5.175rem]";
 
 /** 표 안 pill 버튼 — 한글 약 5자 기준, 폭 10% 축소 */
@@ -22,6 +26,10 @@ export const tablePillButtonSize =
 /** 교수용 코멘트 5열 (간격 축소) */
 export const COMMENT_GRID_PROFESSOR =
   "grid grid-cols-5 gap-px";
+
+/** 질문 문항 조사 — 고객·담당자·합산·PDF */
+export const COMMENT_GRID_PROFESSOR_QUESTIONS =
+  "grid grid-cols-4 gap-px";
 
 /** 학생용 코멘트 4열 (간격 축소) */
 export const COMMENT_GRID_STUDENT = "grid grid-cols-4 gap-px";

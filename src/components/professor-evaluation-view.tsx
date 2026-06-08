@@ -13,26 +13,21 @@ import {
   hasSubmittedObserverEvaluation,
   isProfessorEvaluationSubmitted,
   leadEvaluationFromPresentation,
-  observerEvaluationFromPresentation,
   professorEvaluationForModal,
   submittedLeadEvaluation,
-  submittedObserverEvaluation,
 } from "@/lib/professor-evaluation-display";
-import { formatGender } from "@/lib/gender-labels";
 import {
   ATTACHMENT_LABEL,
   CONTINUE_RATE_LABEL,
   CUSTOMER_EVAL_LABEL,
   MANAGER_EVAL_LABEL,
   OPINION_SECTION_LABEL,
-  PARTICIPANT_CUSTOMERS_LABEL,
-  PARTICIPATION_EDIT_LABEL,
-  PARTICIPATION_LABEL,
-  PARTICIPATION_REGISTER_LABEL,
+  QUESTION_CONTENT_LABEL,
+  QUESTION_LIST_LABEL,
+  QUESTION_TITLE_LABEL,
   RATE_ACTION_LABEL,
   RATE_COMPLETE_LABEL,
   SURVEY_WEIGHT_LABEL,
-  TEAM_MEMBER_EVAL_LABEL,
 } from "@/lib/ui-labels";
 import {
   assignmentBodyCell,
@@ -41,7 +36,7 @@ import {
   commentBodyCell,
   commentBodyCellStacked,
   commentHeaderCell,
-  COMMENT_GRID_PROFESSOR,
+  COMMENT_GRID_PROFESSOR_QUESTIONS,
   EVALUATION_TABLE_MIN_WIDTH,
   EVALUATION_TABLE_SPLIT,
   indexBodyCell,
@@ -76,11 +71,11 @@ type Presentation = {
   professorScore: number | null;
   finalGrade: number | null;
   rank: number | null;
-  presenter: {
+  presenter?: {
     name: string;
     birthDate: string | null;
     gender: string | null;
-  };
+  } | null;
   observerProfessorComment: string | null;
   observerProfessorReason?: string | null;
   observerProfessorSuggestions?: string | null;
@@ -140,9 +135,13 @@ export function ProfessorEvaluationView({
 }) {
   const [modal, setModal] = useState<ModalState | null>(null);
 
+  function questionLabel(p: Presentation) {
+    return p.title?.trim() || "질문";
+  }
+
   function openPeerComments(p: Presentation) {
     setModal({
-      title: `${p.presenter.name} · ${CUSTOMER_EVAL_LABEL}`,
+      title: `${questionLabel(p)} · ${CUSTOMER_EVAL_LABEL}`,
       items: evaluationContentsFromParts(
         submittedEvaluations(p.evaluations).map((e) => ({
           reason: e.reason,
@@ -153,19 +152,10 @@ export function ProfessorEvaluationView({
     });
   }
 
-  function openObserverComment(p: Presentation) {
-    const evalData = submittedObserverEvaluation(p);
-    setModal({
-      title: `${p.presenter.name} · ${TEAM_MEMBER_EVAL_LABEL}`,
-      items: evalData ? professorEvaluationForModal(evalData) : [],
-      emptyMessage: `등록된 ${TEAM_MEMBER_EVAL_LABEL} 코멘트가 없습니다.`,
-    });
-  }
-
   function openProfessorComment(p: Presentation) {
     const evalData = submittedLeadEvaluation(p);
     setModal({
-      title: `${p.presenter.name} · ${MANAGER_EVAL_LABEL}`,
+      title: `${questionLabel(p)} · ${MANAGER_EVAL_LABEL}`,
       items: evalData ? professorEvaluationForModal(evalData) : [],
       emptyMessage: `등록된 ${MANAGER_EVAL_LABEL} 코멘트가 없습니다.`,
     });
@@ -211,7 +201,7 @@ export function ProfessorEvaluationView({
                 if (!hasFeedbackPdf(p)) continue;
                 const result = await downloadFeedbackPdf(p.id);
                 if (!result.ok) {
-                  window.alert(`${p.presenter.name}: ${result.error}`);
+                  window.alert(`${questionLabel(p)}: ${result.error}`);
                   break;
                 }
               }
@@ -228,7 +218,7 @@ export function ProfessorEvaluationView({
           className={`grid ${EVALUATION_TABLE_MIN_WIDTH} border-b-2 border-zinc-800 ${EVALUATION_TABLE_SPLIT}`}
         >
           <h2 className="px-4 py-3 text-center text-sm font-semibold lg:border-r lg:border-r-zinc-800">
-            {PARTICIPANT_CUSTOMERS_LABEL}
+            {QUESTION_LIST_LABEL}
           </h2>
           <h2 className="px-4 py-3 text-center text-sm font-semibold">
             {OPINION_SECTION_LABEL}
@@ -238,16 +228,13 @@ export function ProfessorEvaluationView({
         <div className={`grid ${EVALUATION_TABLE_MIN_WIDTH} ${EVALUATION_TABLE_SPLIT} ${ROW_MIN}`}>
           <div className={`grid ${LEFT_LIST_GRID} lg:border-r lg:border-r-zinc-200`}>
             <div className={indexHeaderCell}>#</div>
-            <div className={nameHeaderCell}>이름</div>
-            <div className={nameHeaderCell}>생년월일</div>
-            <div className={nameHeaderCell}>성별</div>
-            <div className={assignmentHeaderCell}>{PARTICIPATION_LABEL}</div>
+            <div className={nameHeaderCell}>{QUESTION_TITLE_LABEL}</div>
+            <div className={assignmentHeaderCell}>{QUESTION_CONTENT_LABEL}</div>
             <div className={nameHeaderCell}>{ATTACHMENT_LABEL}</div>
             <div className={nameHeaderCell}>{OPINION_SECTION_LABEL}</div>
           </div>
-          <div className={COMMENT_GRID_PROFESSOR}>
+          <div className={COMMENT_GRID_PROFESSOR_QUESTIONS}>
             <div className={commentHeaderCell}>고객</div>
-            <div className={commentHeaderCell}>팀멤버</div>
             <div className={commentHeaderCell}>담당자</div>
             <div className={commentHeaderCell}>합산점수</div>
             <div className={commentHeaderCell}>PDF</div>
@@ -256,7 +243,7 @@ export function ProfessorEvaluationView({
 
         {presentations.length === 0 ? (
           <p className="border-t border-zinc-200 px-4 py-10 text-center text-zinc-500">
-            등록된 고객이 없습니다.
+            등록된 질문 문항이 없습니다.
           </p>
         ) : (
           presentations.map((p, i) => {
@@ -266,13 +253,10 @@ export function ProfessorEvaluationView({
             const hasMaterial = Boolean(p.hasPresentationPdf);
 
             const peerVivid = submitted.length > 0;
-            const observerEval = observerEvaluationFromPresentation(p);
             const leadEval = leadEvaluationFromPresentation(p);
-            const observerVivid = hasSubmittedObserverEvaluation(p);
             const professorVivid = hasSubmittedLeadEvaluation(p);
 
-            const myProfessorEval =
-              evaluateLinkMode === "observer" ? observerEval : leadEval;
+            const myProfessorEval = leadEval;
             const hasEvaluated =
               evaluateLinkMode !== "none" &&
               isProfessorEvaluationSubmitted(myProfessorEval);
@@ -283,10 +267,7 @@ export function ProfessorEvaluationView({
               (myProfessorEval.empathyScore != null ||
                 Boolean(myProfessorEval.reason.trim()) ||
                 Boolean(myProfessorEval.suggestions.trim()));
-            const evaluateHref =
-              evaluateLinkMode === "observer"
-                ? `/presentations/${p.id}/observer-evaluate`
-                : `/presentations/${p.id}/professor-evaluate`;
+            const evaluateHref = `/presentations/${p.id}/professor-evaluate`;
 
             return (
               <div
@@ -297,27 +278,18 @@ export function ProfessorEvaluationView({
                   className={`grid ${LEFT_LIST_GRID} items-stretch lg:border-r lg:border-r-zinc-200 ${ROW_MIN}`}
                 >
                   <div className={indexBodyCell}>{i + 1}</div>
-                  <div className={nameBodyCell} title={p.presenter.name}>
-                    {p.presenter.name}
-                  </div>
-                  <div className={nameBodyCell}>{p.presenter.birthDate ?? "—"}</div>
-                  <div className={nameBodyCell}>
-                    {formatGender(p.presenter.gender as "MALE" | "FEMALE" | "OTHER" | null)}
-                  </div>
-                  <div className={assignmentBodyCell}>
+                  <div className={assignmentBodyCell} title={p.title ?? ""}>
                     {registered ? (
                       <span className="line-clamp-2 font-medium">{p.title}</span>
-                    ) : showEditButton ? (
-                      <Link
-                        href={`/presentations/${p.id}/prep`}
-                        className={`${pillClass(true, true)} ${pillGreenActive}`}
-                      >
-                        {PARTICIPATION_REGISTER_LABEL}
-                      </Link>
                     ) : (
-                      <span className="text-xs text-zinc-400 opacity-75">
-                        미등록
-                      </span>
+                      <span className="text-xs text-zinc-400 opacity-75">미등록</span>
+                    )}
+                  </div>
+                  <div className={assignmentBodyCell} title={p.overview ?? ""}>
+                    {registered ? (
+                      <span className="line-clamp-2">{p.overview}</span>
+                    ) : (
+                      "—"
                     )}
                   </div>
                   <div className={bodyCell}>
@@ -367,7 +339,7 @@ export function ProfessorEvaluationView({
                   </div>
                 </div>
 
-                <div className={`${COMMENT_GRID_PROFESSOR} items-stretch ${ROW_MIN}`}>
+                <div className={`${COMMENT_GRID_PROFESSOR_QUESTIONS} items-stretch ${ROW_MIN}`}>
                   <div className={commentBodyCellStacked}>
                     <span className="text-xs font-semibold leading-none text-zinc-800">
                       {registered
@@ -380,25 +352,6 @@ export function ProfessorEvaluationView({
                       onClick={() => registered && peerVivid && openPeerComments(p)}
                       className={`${pillClass(peerVivid, registered && peerVivid)} ${
                         peerVivid ? pillGreenActive : pillGreenMuted
-                      }`}
-                    >
-                      코멘트
-                    </button>
-                  </div>
-                  <div className={commentBodyCellStacked}>
-                    <span className="text-xs font-semibold leading-none text-zinc-800">
-                      {registered
-                        ? `${formatScoreDisplay(p.observerProfessorScore)} / 10`
-                        : "—"}
-                    </span>
-                    <button
-                      type="button"
-                      disabled={!registered || !observerVivid}
-                      onClick={() =>
-                        registered && observerVivid && openObserverComment(p)
-                      }
-                      className={`${pillClass(observerVivid, registered && observerVivid)} ${
-                        observerVivid ? pillBlueActive : pillBlueMuted
                       }`}
                     >
                       코멘트
@@ -436,7 +389,7 @@ export function ProfessorEvaluationView({
                       disabled={!registered || !pdfReady}
                       disabledTitle={
                         !registered
-                          ? `${PARTICIPATION_REGISTER_LABEL} 후 이용할 수 있습니다.`
+                          ? "질문 등록 후 이용할 수 있습니다."
                           : "의견이 등록되면 다운로드할 수 있습니다."
                       }
                       className={`${pillClass(registered && pdfReady, registered && pdfReady)} ${
@@ -452,8 +405,7 @@ export function ProfessorEvaluationView({
       </div>
 
       <p className="mt-4 text-xs text-zinc-500">
-        {SURVEY_WEIGHT_LABEL}: 동료 {Math.round(course.weightPeer)}% · 팀멤버{" "}
-        {Math.round(course.weightObserver)}% · 담당자{" "}
+        {SURVEY_WEIGHT_LABEL}: 고객 {Math.round(course.weightPeer)}% · 담당자{" "}
         {Math.round(course.weightLead)}%
       </p>
 

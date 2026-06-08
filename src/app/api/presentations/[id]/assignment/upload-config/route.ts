@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { canManageParticipationContent } from "@/lib/role-permissions";
 import {
   blobStoreAccess,
   formatPdfSizeLimitMb,
@@ -14,17 +15,28 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: Params) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "STUDENT") {
+  if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
   const presentation = await prisma.presentation.findUnique({
     where: { id },
-    select: { presenterId: true },
+    select: { presenterId: true, course: { select: { professorId: true } } },
   });
 
-  if (!presentation || presentation.presenterId !== session.user.id) {
+  if (!presentation) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const isManager =
+    canManageParticipationContent(session.user.role) &&
+    presentation.course.professorId === session.user.id;
+  const isPresenter =
+    presentation.presenterId !== null &&
+    presentation.presenterId === session.user.id;
+
+  if (!isManager && !isPresenter) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

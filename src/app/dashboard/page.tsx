@@ -7,9 +7,17 @@ import {
 import { listObserverCoursesForUser } from "@/lib/observer-courses";
 import { canManageCourse } from "@/lib/permissions";
 import { pillButtonPrimaryClass } from "@/lib/pill-button";
+import { surveyQuestionFilter } from "@/lib/survey-questions";
 import { ADD_SURVEY_LABEL, SURVEY_LIST_LABEL } from "@/lib/ui-labels";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
+async function countQuestions(courseId: string) {
+  const { prisma } = await import("@/lib/prisma");
+  return prisma.presentation.count({
+    where: { courseId, ...surveyQuestionFilter },
+  });
+}
 
 async function getCourses(userId: string, role: string) {
   const { prisma } = await import("@/lib/prisma");
@@ -18,14 +26,22 @@ async function getCourses(userId: string, role: string) {
     const courses = await prisma.course.findMany({
       where: { professorId: userId },
       include: {
-        _count: { select: { enrollments: true, observers: true } },
+        _count: { select: { observers: true } },
       },
       orderBy: { createdAt: "desc" },
     });
     return Promise.all(
       courses.map(async (course) => {
-        const access = await ensureCourseAccessToken(course.id);
-        return { ...course, joinUrl: access?.joinUrl ?? null };
+        const [access, questionCount] = await Promise.all([
+          ensureCourseAccessToken(course.id),
+          countQuestions(course.id),
+        ]);
+        return {
+          ...course,
+          joinUrl: access?.joinUrl ?? null,
+          questionCount,
+          customerCount: course._count.observers,
+        };
       })
     );
   }
@@ -36,26 +52,17 @@ async function getCourses(userId: string, role: string) {
       select: { name: true },
     });
     if (!user) return [];
-    return listObserverCoursesForUser(userId, user.name);
+    const courses = await listObserverCoursesForUser(userId, user.name);
+    return Promise.all(
+      courses.map(async (course) => ({
+        ...course,
+        questionCount: await countQuestions(course.id),
+        customerCount: course._count?.observers ?? 0,
+      }))
+    );
   }
 
-  const enrollments = await prisma.courseEnrollment.findMany({
-    where: { studentId: userId },
-    include: {
-      course: {
-        include: {
-          professor: { select: { name: true } },
-          _count: { select: { enrollments: true } },
-        },
-      },
-    },
-    orderBy: { joinedAt: "desc" },
-  });
-
-  return enrollments.map((e) => ({
-    ...e.course,
-    professorName: e.course.professor.name,
-  }));
+  return [];
 }
 
 export default async function DashboardPage() {
@@ -88,9 +95,7 @@ export default async function DashboardPage() {
         <p className="mt-8 text-zinc-600">
           {isProfessor
             ? "아직 등록된 조사가 없습니다. 조사 추가로 새 조사를 만들어주세요."
-            : isObserver
-              ? "등록된 조사가 없습니다. 담당자가 팀멤버로 등록해 주시면 표시됩니다."
-              : "등록된 조사가 없습니다. 담당자가 고객 등록해 주시면 표시됩니다."}
+            : "등록된 조사가 없습니다. 담당자가 고객으로 등록해 주시면 표시됩니다."}
         </p>
       ) : (
         <div className="mt-8 flex flex-col gap-5">
@@ -100,10 +105,6 @@ export default async function DashboardPage() {
                 "joinUrl" in course && typeof course.joinUrl === "string"
                   ? course.joinUrl
                   : null;
-              const counts = course._count as {
-                enrollments: number;
-                observers: number;
-              };
 
               return (
                 <ProfessorEvaluationListCard
@@ -111,30 +112,16 @@ export default async function DashboardPage() {
                   courseId={course.id}
                   name={course.name}
                   semester={course.semester}
-                  studentCount={counts.enrollments}
-                  observerCount={counts.observers}
+                  questionCount={course.questionCount}
+                  customerCount={course.customerCount}
                   joinUrl={joinUrl}
                 />
               );
             }
 
-            const studentCount =
-              "_count" in course &&
-              course._count &&
-              "enrollments" in course._count
-                ? course._count.enrollments
-                : undefined;
-
             const subtitle =
               "professorName" in course && course.professorName
                 ? `담당자 ${course.professorName}`
-                : undefined;
-
-            const observerCount =
-              "_count" in course &&
-              course._count &&
-              "observers" in course._count
-                ? course._count.observers
                 : undefined;
 
             return (
@@ -143,8 +130,8 @@ export default async function DashboardPage() {
                 courseId={course.id}
                 name={course.name}
                 semester={course.semester}
-                studentCount={studentCount}
-                observerCount={observerCount}
+                questionCount={course.questionCount}
+                customerCount={course.customerCount}
                 subtitle={subtitle}
               />
             );

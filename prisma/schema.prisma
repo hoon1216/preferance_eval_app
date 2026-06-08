@@ -97,7 +97,7 @@ model CourseObserver {
 model Presentation {
   id                     String             @id @default(cuid())
   courseId               String
-  presenterId            String
+  presenterId            String?
   title                  String?
   overview               String?
   presentationPdfPath    String?
@@ -118,10 +118,9 @@ model Presentation {
   updatedAt              DateTime           @updatedAt
 
   course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  presenter   User         @relation("PresenterPresentations", fields: [presenterId], references: [id], onDelete: Cascade)
+  presenter   User?        @relation("PresenterPresentations", fields: [presenterId], references: [id], onDelete: Cascade)
   evaluations Evaluation[]
 
-  @@unique([courseId, presenterId])
   @@index([courseId])
 }
 

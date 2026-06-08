@@ -2,7 +2,7 @@
 
 import { ProfessorEvaluationView } from "@/components/professor-evaluation-view";
 import { StudentEvaluationView } from "@/components/student-evaluation-view";
-import { canViewCourseResults, isStudent } from "@/lib/permissions";
+import { canViewCourseResults, isObserverProfessor } from "@/lib/permissions";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
@@ -19,12 +19,12 @@ type Presentation = {
   rank: number | null;
   observerProfessorComment: string | null;
   professorComment: string | null;
-  presenter: {
+  presenter?: {
     id: string;
     name: string;
     birthDate: string | null;
     gender: string | null;
-  };
+  } | null;
   evaluations: {
     evaluatorId: string;
     isDraft?: boolean;
@@ -86,7 +86,7 @@ export default function EvaluationResultsPage() {
   const { course, presentations } = data;
   const role = data.viewerRole ?? session?.user?.role;
 
-  if (isStudent(role ?? "")) {
+  if (isObserverProfessor(role ?? "")) {
     return (
       <StudentEvaluationView course={course} presentations={presentations} />
     );
@@ -107,13 +107,7 @@ export default function EvaluationResultsPage() {
       courseId={courseId}
       professorName={course.professorName ?? session?.user?.name}
       showEditButton={role === "PROFESSOR"}
-      evaluateLinkMode={
-        role === "OBSERVER_PROFESSOR"
-          ? "observer"
-          : role === "PROFESSOR"
-            ? "lead"
-            : "none"
-      }
+      evaluateLinkMode={role === "PROFESSOR" ? "lead" : "none"}
     />
   );
 }

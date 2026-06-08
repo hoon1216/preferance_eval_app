@@ -22,7 +22,7 @@ type Presentation = {
   overview: string | null;
   status: string;
   hasPresentationPdf?: boolean;
-  presenter: { name: string; studentId: string | null };
+  presenter: { name: string; studentId: string | null } | null;
 };
 
 type UploadConfig = {
@@ -236,9 +236,11 @@ export default function PrepPage() {
       <h1 className="mt-4 text-2xl font-bold">
         {isEdit ? PARTICIPATION_EDIT_LABEL : PARTICIPATION_SUBMIT_LABEL}
       </h1>
-      <p className="mt-1 text-sm text-zinc-500">
-        고객: {presentation.presenter.name}
-      </p>
+      {presentation.presenter && (
+        <p className="mt-1 text-sm text-zinc-500">
+          고객: {presentation.presenter.name}
+        </p>
+      )}
       <p className="mt-2 text-zinc-600">
         {PARTICIPATION_TITLE_LABEL}과 {PARTICIPATION_OVERVIEW_LABEL}는 필수입니다. 첨부 PDF는
         선택 사항이며, 없어도 {PARTICIPATION_REGISTER_LABEL}이 완료됩니다.

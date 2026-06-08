@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { ensureStudentEnrollment } from "@/lib/course-enrollment";
+import { findObserverSlotForUser } from "@/lib/observer-courses";
 import {
   findMyEvaluation,
   isEvaluationSubmitted,
@@ -15,7 +15,6 @@ import {
 import {
   canPeerEvaluate,
   isLeadProfessor,
-  userCanAccessCourse,
 } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -70,32 +69,12 @@ async function assertCanEvaluate(
     };
   }
 
-  if (presentation.presenterId === evaluatorId) {
-    return {
-      error: NextResponse.json(
-        { error: "본인 참여 내용에는 의견을 등록할 수 없습니다." },
-        { status: 400 }
-      ),
-    };
-  }
+  const observerSlot = await findObserverSlotForUser(
+    presentation.courseId,
+    evaluatorId
+  );
 
-  const [enrollments, presenters] = await Promise.all([
-    prisma.courseEnrollment.findMany({
-      where: { courseId: presentation.courseId },
-      select: { studentId: true },
-    }),
-    prisma.presentation.findMany({
-      where: { courseId: presentation.courseId },
-      select: { presenterId: true },
-    }),
-  ]);
-
-  const participantIds = new Set([
-    ...enrollments.map((e) => e.studentId),
-    ...presenters.map((p) => p.presenterId),
-  ]);
-
-  if (!participantIds.has(evaluatorId)) {
+  if (!observerSlot) {
     return {
       error: NextResponse.json(
         { error: "이 조사에 등록된 고객만 의견을 등록할 수 있습니다." },
@@ -103,8 +82,6 @@ async function assertCanEvaluate(
       ),
     };
   }
-
-  await ensureStudentEnrollment(presentation.courseId, evaluatorId);
 
   return { presentation };
 }
@@ -225,7 +202,7 @@ async function getEvaluations(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (session.user.role === "STUDENT") {
+  if (canPeerEvaluate(session.user.role)) {
     const mine = await findMyEvaluation(presentationId, session.user.id);
     return NextResponse.json(mine);
   }
@@ -234,15 +211,7 @@ async function getEvaluations(_request: Request, { params }: Params) {
     isLeadProfessor(session.user.role) &&
     presentation.course.professorId === session.user.id;
 
-  const canViewAsObserver =
-    session.user.role === "OBSERVER_PROFESSOR" &&
-    (await userCanAccessCourse(
-      presentation.courseId,
-      session.user.id,
-      session.user.role
-    ));
-
-  if (!canView && !canViewAsObserver) {
+  if (!canView) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

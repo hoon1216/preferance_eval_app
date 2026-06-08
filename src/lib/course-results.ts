@@ -8,15 +8,16 @@ import {
 type PresentationWithEvals = {
   id: string;
   title: string | null;
+  orderIndex?: number;
   professorScore: number | null;
   observerProfessorScore: number | null;
   evaluations: { empathyScore: number; isDraft?: boolean }[];
-  presenter: {
+  presenter?: {
     name: string;
     birthDate?: string | null;
     gender?: string | null;
     id?: string;
-  };
+  } | null;
   [key: string]: unknown;
 };
 

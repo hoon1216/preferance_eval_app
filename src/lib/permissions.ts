@@ -69,7 +69,11 @@ export async function getCourseForUser(
 }
 
 export async function canAccessPresentation(
-  presentation: { courseId: string; presenterId: string; course: { professorId: string } },
+  presentation: {
+    courseId: string;
+    presenterId: string | null;
+    course: { professorId: string };
+  },
   userId: string,
   role: string
 ) {
