@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PROFESSOR
+  STUDENT
+  OBSERVER_PROFESSOR
+}
+
+enum PresentationStatus {
+  PENDING_PREP
+  READY
+  CLOSED
+}
+
+model User {
+  id              String   @id @default(cuid())
+  email           String?  @unique
+  studentId       String?  @unique
+  name            String
+  passwordHash    String
+  role            Role
+  profileComplete Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  coursesTeaching Course[]           @relation("ProfessorCourses")
+  enrollments     CourseEnrollment[]
+  presentations   Presentation[]     @relation("PresenterPresentations")
+  evaluations     Evaluation[]
+  observerSlots   CourseObserver[]
+}
+
+model Course {
+  id             String   @id @default(cuid())
+  name           String
+  semester       String
+  code           String   @unique
+  accessToken    String?  @unique
+  professorId    String
+  weightPeer     Float    @default(50)
+  weightObserver Float    @default(25)
+  weightLead     Float    @default(25)
+  createdAt      DateTime @default(now())
+
+  professor     User               @relation("ProfessorCourses", fields: [professorId], references: [id], onDelete: Cascade)
+  enrollments   CourseEnrollment[]
+  presentations Presentation[]
+  observers     CourseObserver[]
+}
+
+model CourseEnrollment {
+  id          String   @id @default(cuid())
+  courseId    String
+  studentId   String
+  accessToken String?  @unique
+  joinedAt    DateTime @default(now())
+
+  course  Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, studentId])
+}
+
+model CourseObserver {
+  id          String   @id @default(cuid())
+  courseId    String
+  name        String
+  department  String?
+  accessToken String?  @unique
+  userId      String?
+  createdAt   DateTime @default(now())
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([courseId, name])
+}
+
+model Presentation {
+  id                     String             @id @default(cuid())
+  courseId               String
+  presenterId            String
+  title                  String?
+  overview               String?
+  presentationPdfPath    String?
+  status                 PresentationStatus @default(PENDING_PREP)
+  professorScore               Float?
+  professorComment             String?
+  professorReason              String?
+  professorSuggestions         String?
+  professorEvaluationIsDraft   Boolean  @default(true)
+  observerProfessorScore       Float?
+  observerProfessorComment     String?
+  observerProfessorReason      String?
+  observerProfessorSuggestions String?
+  observerEvaluationIsDraft    Boolean  @default(true)
+  presentationDate       DateTime?
+  orderIndex             Int                @default(0)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  presenter   User         @relation("PresenterPresentations", fields: [presenterId], references: [id], onDelete: Cascade)
+  evaluations Evaluation[]
+
+  @@unique([courseId, presenterId])
+  @@index([courseId])
+}
+
+model Evaluation {
+  id             String   @id @default(cuid())
+  presentationId String
+  evaluatorId    String
+  empathyScore   Float
+  reason         String
+  suggestions    String
+  isDraft        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  presentation Presentation @relation(fields: [presentationId], references: [id], onDelete: Cascade)
+  evaluator    User         @relation(fields: [evaluatorId], references: [id], onDelete: Cascade)
+
+  @@unique([presentationId, evaluatorId])
+}
