@@ -19,7 +19,12 @@ type Presentation = {
   rank: number | null;
   observerProfessorComment: string | null;
   professorComment: string | null;
-  presenter: { id: string; name: string; studentId: string | null };
+  presenter: {
+    id: string;
+    name: string;
+    birthDate: string | null;
+    gender: string | null;
+  };
   evaluations: {
     evaluatorId: string;
     isDraft?: boolean;

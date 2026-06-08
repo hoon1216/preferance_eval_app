@@ -1,11 +1,15 @@
 import { auth } from "@/lib/auth";
-import { canManageCourse, isLeadProfessor } from "@/lib/permissions";
-import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
 import { courseHasStudentWithName } from "@/lib/course-participants";
 import { ensureStudentEnrollment } from "@/lib/course-enrollment";
+import {
+  customerProfileSelect,
+  parseCustomerProfile,
+} from "@/lib/customer-profile";
 import { hashInitialPassword } from "@/lib/default-password";
+import { canManageCourse } from "@/lib/permissions";
 import { normalizeParticipantName } from "@/lib/participant-name";
+import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -26,9 +30,14 @@ export async function POST(request: Request, { params }: Params) {
 
     const body = await request.json();
     const name = normalizeParticipantName(String(body.name ?? ""));
+    const profile = parseCustomerProfile(body);
 
     if (!name) {
       return NextResponse.json({ error: "이름을 입력해주세요." }, { status: 400 });
+    }
+
+    if (!profile.ok) {
+      return NextResponse.json({ error: profile.error }, { status: 400 });
     }
 
     if (await courseHasStudentWithName(courseId, name)) {
@@ -45,7 +54,16 @@ export async function POST(request: Request, { params }: Params) {
         name,
         role: "STUDENT",
         passwordHash,
-        profileComplete: false,
+        profileComplete: true,
+        email: null,
+        studentId: null,
+        ...profile.data,
+      },
+      select: {
+        id: true,
+        name: true,
+        profileComplete: true,
+        ...customerProfileSelect,
       },
     });
 
@@ -74,12 +92,8 @@ export async function POST(request: Request, { params }: Params) {
 
     return NextResponse.json(
       {
-        id: student.id,
-        name: student.name,
-        studentId: student.studentId,
-        email: student.email,
+        ...student,
         taskTitle: presentation?.title ?? null,
-        profileComplete: student.profileComplete,
       },
       { status: 201 }
     );
@@ -118,7 +132,7 @@ async function getStudents(_request: Request, { params }: Params) {
 
   const { id: courseId } = await params;
   const allowed =
-    isLeadProfessor(session.user.role)
+    session.user.role === "PROFESSOR"
       ? await prisma.course.findFirst({
           where: { id: courseId, professorId: session.user.id },
         })
@@ -138,10 +152,9 @@ async function getStudents(_request: Request, { params }: Params) {
           select: {
             id: true,
             name: true,
-            studentId: true,
-            email: true,
             profileComplete: true,
             role: true,
+            ...customerProfileSelect,
           },
         },
       },
@@ -150,16 +163,16 @@ async function getStudents(_request: Request, { params }: Params) {
     prisma.presentation.findMany({
       where: { courseId },
       select: {
+        id: true,
         presenterId: true,
         title: true,
         presenter: {
           select: {
             id: true,
             name: true,
-            studentId: true,
-            email: true,
             profileComplete: true,
             role: true,
+            ...customerProfileSelect,
           },
         },
       },
@@ -168,35 +181,48 @@ async function getStudents(_request: Request, { params }: Params) {
   ]);
 
   const taskTitleByStudent = new Map<string, string | null>();
+  const presentationIdByStudent = new Map<string, string>();
   for (const p of presentations) {
     if (!taskTitleByStudent.has(p.presenterId)) {
       taskTitleByStudent.set(p.presenterId, p.title);
+      presentationIdByStudent.set(p.presenterId, p.id);
     }
   }
 
-  const studentMap = new Map<
-    string,
-    {
-      id: string;
-      name: string;
-      studentId: string | null;
-      email: string | null;
-      profileComplete: boolean;
-      enrollmentId?: string;
-      accessToken?: string | null;
-    }
-  >();
+  type StudentRow = {
+    id: string;
+    name: string;
+    profileComplete: boolean;
+    enrollmentId?: string;
+    accessToken?: string | null;
+    presentationId?: string | null;
+    taskTitle: string | null;
+    birthDate: string | null;
+    gender: string | null;
+    occupation: string | null;
+    residenceRegion: string | null;
+    familyCount: number | null;
+    notes: string | null;
+  };
+
+  const studentMap = new Map<string, StudentRow>();
 
   for (const e of enrollments) {
     if (e.student.role !== "STUDENT") continue;
     studentMap.set(e.student.id, {
       id: e.student.id,
       name: e.student.name,
-      studentId: e.student.studentId,
-      email: e.student.email,
       profileComplete: e.student.profileComplete,
       enrollmentId: e.id,
       accessToken: e.accessToken,
+      presentationId: presentationIdByStudent.get(e.student.id) ?? null,
+      taskTitle: taskTitleByStudent.get(e.student.id) ?? null,
+      birthDate: e.student.birthDate,
+      gender: e.student.gender,
+      occupation: e.student.occupation,
+      residenceRegion: e.student.residenceRegion,
+      familyCount: e.student.familyCount,
+      notes: e.student.notes,
     });
   }
 
@@ -206,9 +232,15 @@ async function getStudents(_request: Request, { params }: Params) {
       studentMap.set(p.presenter.id, {
         id: p.presenter.id,
         name: p.presenter.name,
-        studentId: p.presenter.studentId,
-        email: p.presenter.email,
         profileComplete: p.presenter.profileComplete,
+        presentationId: p.id,
+        taskTitle: p.title,
+        birthDate: p.presenter.birthDate,
+        gender: p.presenter.gender,
+        occupation: p.presenter.occupation,
+        residenceRegion: p.presenter.residenceRegion,
+        familyCount: p.presenter.familyCount,
+        notes: p.presenter.notes,
       });
     }
   }
@@ -219,13 +251,13 @@ async function getStudents(_request: Request, { params }: Params) {
       .map(async (student) => {
         const enrollment = await ensureStudentEnrollment(courseId, student.id);
         return {
-          id: student.id,
+          ...student,
           enrollmentId: student.enrollmentId ?? enrollment.id,
-          name: student.name,
-          studentId: student.studentId,
-          email: student.email,
-          taskTitle: taskTitleByStudent.get(student.id) ?? null,
-          profileComplete: student.profileComplete,
+          presentationId:
+            student.presentationId ??
+            presentationIdByStudent.get(student.id) ??
+            null,
+          taskTitle: student.taskTitle ?? taskTitleByStudent.get(student.id) ?? null,
         };
       })
   );

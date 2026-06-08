@@ -1,6 +1,7 @@
 import { apiErrorMessage } from "@/lib/api-error";
 import { auth } from "@/lib/auth";
 import { isPdfFile, MAX_PDF_BYTES } from "@/lib/pdf-upload-limits";
+import { canManageParticipationContent } from "@/lib/role-permissions";
 import { prisma } from "@/lib/prisma";
 import {
   deletePresentationPdf,
@@ -14,7 +15,7 @@ type Params = { params: Promise<{ id: string }> };
 
 export const maxDuration = 60;
 
-async function assertStudentPresentation(id: string, userId: string) {
+async function assertCanEditAssignment(id: string, userId: string, role: string) {
   const presentation = await prisma.presentation.findUnique({
     where: { id },
     include: { course: true },
@@ -24,7 +25,11 @@ async function assertStudentPresentation(id: string, userId: string) {
     return { error: NextResponse.json({ error: "Not found" }, { status: 404 }) };
   }
 
-  if (presentation.presenterId !== userId) {
+  const isManager =
+    canManageParticipationContent(role) &&
+    presentation.course.professorId === userId;
+
+  if (!isManager) {
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
 
@@ -43,12 +48,16 @@ async function assertStudentPresentation(id: string, userId: string) {
 export async function POST(request: Request, { params }: Params) {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "STUDENT") {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    const access = await assertStudentPresentation(id, session.user.id);
+    const access = await assertCanEditAssignment(
+      id,
+      session.user.id,
+      session.user.role
+    );
     if (access.error) return access.error;
     const presentation = access.presentation!;
 

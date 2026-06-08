@@ -18,6 +18,7 @@ import {
   submittedLeadEvaluation,
   submittedObserverEvaluation,
 } from "@/lib/professor-evaluation-display";
+import { formatGender } from "@/lib/gender-labels";
 import {
   ATTACHMENT_LABEL,
   CONTINUE_RATE_LABEL,
@@ -75,7 +76,11 @@ type Presentation = {
   professorScore: number | null;
   finalGrade: number | null;
   rank: number | null;
-  presenter: { name: string; studentId: string | null };
+  presenter: {
+    name: string;
+    birthDate: string | null;
+    gender: string | null;
+  };
   observerProfessorComment: string | null;
   observerProfessorReason?: string | null;
   observerProfessorSuggestions?: string | null;
@@ -234,7 +239,8 @@ export function ProfessorEvaluationView({
           <div className={`grid ${LEFT_LIST_GRID} lg:border-r lg:border-r-zinc-200`}>
             <div className={indexHeaderCell}>#</div>
             <div className={nameHeaderCell}>이름</div>
-            <div className={nameHeaderCell}>학번</div>
+            <div className={nameHeaderCell}>생년월일</div>
+            <div className={nameHeaderCell}>성별</div>
             <div className={assignmentHeaderCell}>{PARTICIPATION_LABEL}</div>
             <div className={nameHeaderCell}>{ATTACHMENT_LABEL}</div>
             <div className={nameHeaderCell}>{OPINION_SECTION_LABEL}</div>
@@ -294,10 +300,20 @@ export function ProfessorEvaluationView({
                   <div className={nameBodyCell} title={p.presenter.name}>
                     {p.presenter.name}
                   </div>
-                  <div className={nameBodyCell}>{p.presenter.studentId ?? "—"}</div>
+                  <div className={nameBodyCell}>{p.presenter.birthDate ?? "—"}</div>
+                  <div className={nameBodyCell}>
+                    {formatGender(p.presenter.gender as "MALE" | "FEMALE" | "OTHER" | null)}
+                  </div>
                   <div className={assignmentBodyCell}>
                     {registered ? (
                       <span className="line-clamp-2 font-medium">{p.title}</span>
+                    ) : showEditButton ? (
+                      <Link
+                        href={`/presentations/${p.id}/prep`}
+                        className={`${pillClass(true, true)} ${pillGreenActive}`}
+                      >
+                        {PARTICIPATION_REGISTER_LABEL}
+                      </Link>
                     ) : (
                       <span className="text-xs text-zinc-400 opacity-75">
                         미등록
@@ -334,7 +350,7 @@ export function ProfessorEvaluationView({
                     ) : !registered ? (
                       <span
                         className={`${pillClass(false, false)} ${pillGreenMuted}`}
-                        title={`${PARTICIPATION_REGISTER_LABEL} 후 의견을 등록할 수 있습니다.`}
+                        title="조사 내용 등록 후 의견을 등록할 수 있습니다."
                       >
                         {RATE_ACTION_LABEL}
                       </span>

@@ -66,7 +66,7 @@ export async function findStudentParticipantByName(courseId: string, rawName: st
       name: student.name,
       courseName: course.name,
       courseSemester: course.semester,
-      profileComplete: student.profileComplete,
+      profileComplete: true,
       studentUserId: student.id,
     };
   }
@@ -96,7 +96,7 @@ export async function findStudentParticipantByName(courseId: string, rawName: st
       name: presenter.name,
       courseName: course.name,
       courseSemester: course.semester,
-      profileComplete: presenter.profileComplete,
+      profileComplete: true,
       studentUserId: presenter.id,
     };
   }

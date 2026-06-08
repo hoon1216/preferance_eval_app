@@ -13,9 +13,9 @@ type PresentationWithEvals = {
   evaluations: { empathyScore: number; isDraft?: boolean }[];
   presenter: {
     name: string;
-    studentId: string | null;
+    birthDate?: string | null;
+    gender?: string | null;
     id?: string;
-    email?: string | null;
   };
   [key: string]: unknown;
 };

@@ -11,6 +11,7 @@ import {
   submittedLeadEvaluation,
   submittedObserverEvaluation,
 } from "@/lib/professor-evaluation-display";
+import { formatGender } from "@/lib/gender-labels";
 import {
   ATTACHMENT_LABEL,
   CONTINUE_RATE_LABEL,
@@ -18,9 +19,7 @@ import {
   MANAGER_EVAL_LABEL,
   OPINION_SECTION_LABEL,
   PARTICIPANT_CUSTOMERS_LABEL,
-  PARTICIPATION_EDIT_LABEL,
   PARTICIPATION_LABEL,
-  PARTICIPATION_REGISTER_LABEL,
   RATE_ACTION_LABEL,
   RATE_COMPLETE_LABEL,
   TEAM_MEMBER_EVAL_LABEL,
@@ -62,7 +61,12 @@ type Presentation = {
   title: string | null;
   overview: string | null;
   hasPresentationPdf?: boolean;
-  presenter: { id: string; name: string; studentId: string | null };
+  presenter: {
+    id: string;
+    name: string;
+    birthDate: string | null;
+    gender: string | null;
+  };
   evaluations: {
     evaluatorId: string;
     isDraft?: boolean;
@@ -151,40 +155,12 @@ export function StudentEvaluationView({
     });
   }
 
-  const myPresentation = presentations.find((p) => p.presenter.id === userId);
-  const myRegistered = myPresentation ? isAssignmentRegistered(myPresentation) : false;
-  const myPdfMissing =
-    myRegistered && myPresentation && !myPresentation.hasPresentationPdf;
-  const showTableActions =
-    myPdfMissing || Boolean(myPresentation && myRegistered);
-
-  const tableActionBtn =
-    "rounded-full border-2 border-zinc-800 px-4 py-1 text-xs font-semibold hover:bg-zinc-50";
-
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">{course.name}</h1>
         <p className="mt-1 text-zinc-600">{course.semester}</p>
       </div>
-
-      {showTableActions && (
-        <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
-          {myPdfMissing && (
-            <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
-              자료 미첨부
-            </span>
-          )}
-          {myPresentation && myRegistered && (
-            <Link
-              href={`/presentations/${myPresentation.id}/prep`}
-              className={tableActionBtn}
-            >
-              {PARTICIPATION_EDIT_LABEL}
-            </Link>
-          )}
-        </div>
-      )}
 
       <div className="overflow-x-auto rounded-xl border-2 border-zinc-800">
         <div className={EVALUATION_TABLE_MIN_WIDTH}>
@@ -203,7 +179,8 @@ export function StudentEvaluationView({
           <div className={`grid ${LEFT_LIST_GRID} lg:border-r lg:border-r-zinc-200`}>
             <div className={indexHeaderCell}>#</div>
             <div className={nameHeaderCell}>이름</div>
-            <div className={nameHeaderCell}>학번</div>
+            <div className={nameHeaderCell}>생년월일</div>
+            <div className={nameHeaderCell}>성별</div>
             <div className={assignmentHeaderCell}>{PARTICIPATION_LABEL}</div>
             <div className={nameHeaderCell}>{ATTACHMENT_LABEL}</div>
             <div className={nameHeaderCell}>{OPINION_SECTION_LABEL}</div>
@@ -249,20 +226,16 @@ export function StudentEvaluationView({
                   <div className={nameBodyCell} title={p.presenter.name}>
                     {p.presenter.name}
                   </div>
-                  <div className={nameBodyCell}>{p.presenter.studentId ?? "—"}</div>
+                  <div className={nameBodyCell}>{p.presenter.birthDate ?? "—"}</div>
+                  <div className={nameBodyCell}>
+                    {formatGender(p.presenter.gender as "MALE" | "FEMALE" | "OTHER" | null)}
+                  </div>
                   <div className={assignmentBodyCell}>
-                    {isSelf && !registered ? (
-                      <Link
-                        href={`/presentations/${p.id}/prep`}
-                        className={`${pillClass(true, true)} ${pillGreenActive}`}
-                      >
-                        {PARTICIPATION_REGISTER_LABEL}하기
-                      </Link>
-                    ) : registered ? (
+                    {registered ? (
                       <span className="line-clamp-2">{p.title}</span>
                     ) : (
                       <span className="text-xs text-zinc-400 opacity-75">
-                        미등록
+                        담당자 등록 대기
                       </span>
                     )}
                   </div>
@@ -295,7 +268,7 @@ export function StudentEvaluationView({
                     ) : !registered ? (
                       <span
                         className={`${pillClass(false, false)} ${pillGreenMuted}`}
-                        title={`${PARTICIPATION_REGISTER_LABEL} 후 의견을 등록할 수 있습니다.`}
+                        title="담당자가 조사 내용을 등록하면 의견을 등록할 수 있습니다."
                       >
                         {RATE_ACTION_LABEL}
                       </span>
@@ -311,7 +284,7 @@ export function StudentEvaluationView({
                     ) : (
                       <span
                         className={`${pillClass(false, false)} ${pillGreenMuted}`}
-                        title={`${PARTICIPATION_REGISTER_LABEL} 후 의견을 등록할 수 있습니다.`}
+                        title="담당자가 조사 내용을 등록하면 의견을 등록할 수 있습니다."
                       >
                         {RATE_ACTION_LABEL}
                       </span>

@@ -51,7 +51,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const loginRole = String(credentials?.loginRole ?? "");
         const expectedRole = loginRoleToDbRole(loginRole);
 
-        if (!username || !password || !expectedRole) return null;
+        if (!username || !expectedRole) return null;
 
         const candidates = await prisma.user.findMany({
           where: { role: expectedRole },
@@ -60,20 +60,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const nameMatches = candidates.filter(
           (u) =>
             normalizeParticipantName(u.name) === username ||
-            (u.email && u.email.toLowerCase() === username.toLowerCase())
+            (expectedRole !== "STUDENT" &&
+              u.email &&
+              u.email.toLowerCase() === username.toLowerCase())
         );
 
         let user: (typeof candidates)[number] | null = null;
-        for (const candidate of nameMatches) {
-          if (await bcrypt.compare(password, candidate.passwordHash)) {
-            user = candidate;
-            break;
-          }
-        }
-        if (!user) return null;
 
-        if (!user.profileComplete && user.role !== "PROFESSOR") {
-          return null;
+        if (expectedRole === "STUDENT") {
+          if (nameMatches.length !== 1) return null;
+          user = nameMatches[0];
+        } else {
+          if (!password) return null;
+          for (const candidate of nameMatches) {
+            if (await bcrypt.compare(password, candidate.passwordHash)) {
+              user = candidate;
+              break;
+            }
+          }
+          if (!user) return null;
+          if (!user.profileComplete && user.role !== "PROFESSOR") {
+            return null;
+          }
         }
 
         return {

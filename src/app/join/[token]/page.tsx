@@ -32,7 +32,6 @@ export default function JoinPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    studentId: "",
     department: "",
     email: "",
     password: DEFAULT_INITIAL_PASSWORD,
@@ -54,11 +53,35 @@ export default function JoinPage() {
         return;
       }
       setInfo(data as JoinInfo);
-      if (data.type !== "COURSE" && data.profileComplete) {
+      if (data.type === "STUDENT") {
+        setError("");
+      } else if (data.type !== "COURSE" && data.profileComplete) {
         setError("이미 계정 설정이 완료되었습니다. 로그인해주세요.");
       }
     })();
   }, [token]);
+
+  async function loginAsStudent(name: string) {
+    setLoading(true);
+    setError("");
+
+    const result = await signIn("credentials", {
+      username: name,
+      password: "",
+      loginRole: "STUDENT",
+      redirect: false,
+    });
+
+    setLoading(false);
+
+    if (result?.error) {
+      setError("접속에 실패했습니다. 이름을 확인하거나 담당자에게 문의해주세요.");
+      return;
+    }
+
+    router.push("/dashboard");
+    router.refresh();
+  }
 
   async function lookupName(e: React.FormEvent) {
     e.preventDefault();
@@ -84,15 +107,20 @@ export default function JoinPage() {
       return;
     }
 
+    if (data.type === "STUDENT") {
+      await loginAsStudent(data.name);
+      return;
+    }
+
     setInfo(data as JoinInfo);
     if (data.profileComplete) {
       setError("이미 계정 설정이 완료되었습니다. 로그인해주세요.");
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleObserverSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!info || info.type === "COURSE" || info.profileComplete) return;
+    if (!info || info.type !== "OBSERVER" || info.profileComplete) return;
 
     if (form.password !== form.passwordConfirm) {
       setError("비밀번호 확인이 일치하지 않습니다.");
@@ -107,8 +135,7 @@ export default function JoinPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         registeredName: info.name,
-        studentId: info.type === "STUDENT" ? form.studentId : undefined,
-        department: info.type === "OBSERVER" ? form.department : undefined,
+        department: form.department,
         email: form.email,
         password: form.password,
       }),
@@ -135,14 +162,14 @@ export default function JoinPage() {
     const result = await signIn("credentials", {
       username: data.name,
       password: form.password,
-      loginRole: data.role === "OBSERVER_PROFESSOR" ? "OBSERVER" : "STUDENT",
+      loginRole: "OBSERVER",
       redirect: false,
     });
 
     setLoading(false);
 
     if (result?.error) {
-      router.push("/login");
+      router.push("/login/customer");
       return;
     }
 
@@ -156,16 +183,16 @@ export default function JoinPage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-12">
-      <h1 className="text-2xl font-bold">최초 접속 설정</h1>
-      <p className="mt-2 text-sm text-zinc-600">
-        초기 비밀번호는 {DEFAULT_INITIAL_PASSWORD}입니다. 필요 시 아래에서 변경할 수
-        있습니다.
-      </p>
+      <h1 className="text-2xl font-bold">접속</h1>
 
       {info?.type === "COURSE" && (
         <>
           <p className="mt-2 text-zinc-600">
             {info.courseName} · {info.courseSemester}
+          </p>
+          <p className="mt-2 text-sm text-zinc-500">
+            고객은 등록된 이름만 입력하면 바로 접속됩니다. 팀멤버는 이름 확인 후
+            이메일·비밀번호를 설정합니다.
           </p>
           <form onSubmit={lookupName} className="mt-8 space-y-4">
             <div>
@@ -181,54 +208,59 @@ export default function JoinPage() {
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button
               type="submit"
-              disabled={nameLookupLoading}
+              disabled={nameLookupLoading || loading}
               className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {nameLookupLoading ? "확인 중..." : "이름 확인"}
+              {nameLookupLoading || loading ? "접속 중..." : "이름 확인 및 접속"}
             </button>
           </form>
         </>
       )}
 
-      {info && info.type !== "COURSE" && (
+      {info && info.type === "STUDENT" && (
         <>
           <p className="mt-2 text-zinc-600">
             {info.courseName} · {info.courseSemester}
           </p>
           <p className="mt-1 text-sm">
-            {info.type === "STUDENT"
-              ? ROLE_LABELS.STUDENT
-              : ROLE_LABELS.OBSERVER_PROFESSOR}
-            :{" "}
+            {ROLE_LABELS.STUDENT}:{" "}
+            <span className="font-semibold">{info.name}</span>
+          </p>
+          {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => loginAsStudent(info.name)}
+            className="mt-6 w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {loading ? "접속 중..." : "이름으로 접속"}
+          </button>
+        </>
+      )}
+
+      {info && info.type === "OBSERVER" && (
+        <>
+          <p className="mt-2 text-zinc-600">
+            {info.courseName} · {info.courseSemester}
+          </p>
+          <p className="mt-1 text-sm">
+            {ROLE_LABELS.OBSERVER_PROFESSOR}:{" "}
             <span className="font-semibold">{info.name}</span>
           </p>
         </>
       )}
 
-      {info && info.type !== "COURSE" && !info.profileComplete ? (
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-          {info.type === "STUDENT" && (
-            <div>
-              <label className="block text-sm font-medium">학번</label>
-              <input
-                required
-                value={form.studentId}
-                onChange={(e) => setForm({ ...form, studentId: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
-              />
-            </div>
-          )}
-          {info.type === "OBSERVER" && (
-            <div>
-              <label className="block text-sm font-medium">학과</label>
-              <input
-                required
-                value={form.department}
-                onChange={(e) => setForm({ ...form, department: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
-              />
-            </div>
-          )}
+      {info && info.type === "OBSERVER" && !info.profileComplete ? (
+        <form onSubmit={handleObserverSubmit} className="mt-8 space-y-4">
+          <div>
+            <label className="block text-sm font-medium">학과</label>
+            <input
+              required
+              value={form.department}
+              onChange={(e) => setForm({ ...form, department: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium">이메일</label>
             <input
@@ -272,13 +304,17 @@ export default function JoinPage() {
             {loading ? "저장 중..." : "설정 완료 및 로그인"}
           </button>
         </form>
-      ) : info && info.type !== "COURSE" ? (
+      ) : info && info.type === "OBSERVER" ? (
         <div className="mt-6">
           {error && <p className="text-sm text-red-600">{error}</p>}
           <Link href="/login" className="mt-4 inline-block text-blue-600 hover:underline">
-            로그인 화면으로
+            관리자 로그인
           </Link>
         </div>
+      ) : null}
+
+      {error && info?.type === "COURSE" ? null : error && !info ? (
+        <p className="mt-4 text-sm text-red-600">{error}</p>
       ) : null}
     </div>
   );

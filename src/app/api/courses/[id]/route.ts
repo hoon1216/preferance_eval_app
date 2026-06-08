@@ -36,7 +36,18 @@ export async function GET(_request: Request, { params }: Params) {
   const presentations = await prisma.presentation.findMany({
     where: { courseId: id },
     include: {
-      presenter: { select: { id: true, name: true, studentId: true, email: true } },
+      presenter: {
+        select: {
+          id: true,
+          name: true,
+          birthDate: true,
+          gender: true,
+          occupation: true,
+          residenceRegion: true,
+          familyCount: true,
+          notes: true,
+        },
+      },
       evaluations: {
         include: {
           evaluator: { select: { id: true, name: true, studentId: true } },

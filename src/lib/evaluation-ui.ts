@@ -11,9 +11,9 @@ const cellX = "px-2";
 const headerY = "py-3";
 const bodyY = "py-2";
 
-/** # · 이름 · 학번 · 과제 · 발표자료 · 평가 */
+/** # · 이름 · 생년월일 · 성별 · 참여 · 첨부자료 · 의견 */
 export const LEFT_LIST_GRID =
-  "grid-cols-[2.15rem_minmax(4.5rem,5.5rem)_3.85rem_minmax(11rem,2.5fr)_5.175rem_5.175rem]";
+  "grid-cols-[2.15rem_minmax(4.5rem,5.5rem)_4.5rem_2.5rem_minmax(11rem,2.5fr)_5.175rem_5.175rem]";
 
 /** 표 안 pill 버튼 — 한글 약 5자 기준, 폭 10% 축소 */
 export const tablePillButtonSize =

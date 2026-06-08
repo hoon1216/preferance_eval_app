@@ -4,6 +4,7 @@ import {
   useBlobClientUpload,
   useBlobPdfStorage,
 } from "@/lib/pdf-upload-limits";
+import { canManageParticipationContent } from "@/lib/role-permissions";
 import { prisma } from "@/lib/prisma";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
@@ -29,21 +30,21 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const session = await auth();
-  if (!session?.user || session.user.role !== "STUDENT") {
+  if (!session?.user || !canManageParticipationContent(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
   const presentation = await prisma.presentation.findUnique({
     where: { id },
-    select: { presenterId: true, status: true },
+    select: { status: true, course: { select: { professorId: true } } },
   });
 
   if (!presentation) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (presentation.presenterId !== session.user.id) {
+  if (presentation.course.professorId !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -10,7 +10,9 @@ import {
   PARTICIPATION_TITLE_LABEL,
 } from "@/lib/ui-labels";
 import { upload } from "@vercel/blob/client";
+import { canManageParticipationContent } from "@/lib/role-permissions";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 
 type Presentation = {
@@ -36,6 +38,7 @@ type UploadConfig = {
 export default function PrepPage() {
   const params = useParams();
   const router = useRouter();
+  const { data: session, status } = useSession();
   const id = params.id as string;
   const [presentation, setPresentation] = useState<Presentation | null>(null);
   const [uploadConfig, setUploadConfig] = useState<UploadConfig | null>(null);
@@ -206,8 +209,16 @@ export default function PrepPage() {
     }
   }
 
-  if (!presentation) {
+  if (status === "loading" || !presentation) {
     return <div className="mx-auto max-w-2xl px-4 py-10">불러오는 중...</div>;
+  }
+
+  if (!session?.user || !canManageParticipationContent(session.user.role)) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-10">
+        <p className="text-red-600">조사 내용 등록은 담당자만 할 수 있습니다.</p>
+      </div>
+    );
   }
 
   const showExistingPdf =
@@ -225,6 +236,9 @@ export default function PrepPage() {
       <h1 className="mt-4 text-2xl font-bold">
         {isEdit ? PARTICIPATION_EDIT_LABEL : PARTICIPATION_SUBMIT_LABEL}
       </h1>
+      <p className="mt-1 text-sm text-zinc-500">
+        고객: {presentation.presenter.name}
+      </p>
       <p className="mt-2 text-zinc-600">
         {PARTICIPATION_TITLE_LABEL}과 {PARTICIPATION_OVERVIEW_LABEL}는 필수입니다. 첨부 PDF는
         선택 사항이며, 없어도 {PARTICIPATION_REGISTER_LABEL}이 완료됩니다.

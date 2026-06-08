@@ -275,7 +275,7 @@ async function patchPresentation(request: Request, { params }: Params) {
 
   if (
     !canManageOwnAssignment(session.user.role) ||
-    presentation.presenterId !== session.user.id
+    presentation.course.professorId !== session.user.id
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

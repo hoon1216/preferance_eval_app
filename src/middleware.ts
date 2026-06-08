@@ -1,6 +1,7 @@
 import { authConfig } from "@/auth.config";
 import {
   canManageCourse,
+  canManageParticipationContent,
   canObserverEvaluate,
   canPeerEvaluate,
   isLeadProfessor,
@@ -12,7 +13,7 @@ const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   if (!req.auth?.user) {
-    const loginUrl = new URL("/login", req.nextUrl.origin);
+    const loginUrl = new URL("/login/customer", req.nextUrl.origin);
     loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -49,7 +50,10 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
   }
 
-  if (/\/presentations\/[^/]+\/prep/.test(path) && !canPeerEvaluate(role)) {
+  if (
+    /\/presentations\/[^/]+\/prep/.test(path) &&
+    !canManageParticipationContent(role)
+  ) {
     return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
   }
 

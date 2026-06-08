@@ -71,7 +71,7 @@ export function NavBar() {
               )}
               <button
                 type="button"
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={() => signOut({ callbackUrl: "/login/customer" })}
                 className={pillButtonClass}
               >
                 로그아웃

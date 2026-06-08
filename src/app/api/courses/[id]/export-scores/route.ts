@@ -1,4 +1,6 @@
 import { auth } from "@/lib/auth";
+import { formatGender } from "@/lib/gender-labels";
+import type { Gender } from "@prisma/client";
 import { canViewCourseResults, userCanAccessCourse } from "@/lib/permissions";
 import { enrichPresentationsForResults } from "@/lib/course-results";
 import { mergeProfessorFieldsBatch } from "@/lib/presentation-professor-fields";
@@ -32,7 +34,7 @@ export async function GET(_request: Request, { params }: Params) {
   const presentations = await prisma.presentation.findMany({
     where: { courseId: id },
     include: {
-      presenter: { select: { studentId: true, name: true } },
+      presenter: { select: { birthDate: true, gender: true, name: true } },
       evaluations: { select: { empathyScore: true, isDraft: true } },
     },
   });
@@ -49,7 +51,8 @@ export async function GET(_request: Request, { params }: Params) {
 
   const header = [
     "#",
-    "학번",
+    "생년월일",
+    "성별",
     "이름",
     "참여 제목",
     "고객 의견",
@@ -63,7 +66,8 @@ export async function GET(_request: Request, { params }: Params) {
     ...rows.map((r, i) =>
       [
         i + 1,
-        r.presenter.studentId ?? "",
+        r.presenter.birthDate ?? "",
+        formatGender(r.presenter.gender as Gender | null | undefined),
         r.presenter.name,
         r.title ?? "",
         r.peerAverage ?? "",

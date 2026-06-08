@@ -13,6 +13,12 @@ enum Role {
   OBSERVER_PROFESSOR
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 enum PresentationStatus {
   PENDING_PREP
   READY
@@ -27,6 +33,12 @@ model User {
   passwordHash    String
   role            Role
   profileComplete Boolean  @default(false)
+  birthDate       String?
+  gender          Gender?
+  occupation      String?
+  residenceRegion String?
+  familyCount     Int?
+  notes           String?
   createdAt       DateTime @default(now())
 
   coursesTeaching Course[]           @relation("ProfessorCourses")

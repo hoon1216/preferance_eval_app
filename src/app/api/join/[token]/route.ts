@@ -32,18 +32,6 @@ async function linkObserverToUser(
   }
 }
 
-async function completeStudentProfile(
-  studentUserId: string,
-  email: string,
-  studentId: string,
-  passwordHash: string
-) {
-  await prisma.user.update({
-    where: { id: studentUserId },
-    data: { email, studentId, passwordHash, profileComplete: true },
-  });
-}
-
 async function completeObserverProfile(
   observerId: string,
   observerName: string,
@@ -139,7 +127,7 @@ export async function GET(request: Request, { params }: Params) {
         name: enrollment.student.name,
         courseName: enrollment.course.name,
         courseSemester: enrollment.course.semester,
-        profileComplete: enrollment.student.profileComplete,
+        profileComplete: true,
         joinUrl: buildJoinUrl(token),
       });
     }
@@ -185,18 +173,9 @@ export async function POST(request: Request, { params }: Params) {
 
     const email = String(body.email ?? "").trim().toLowerCase();
     const password = String(body.password ?? "");
-    const studentId = String(body.studentId ?? "").trim();
     const registeredName = normalizeParticipantName(String(body.registeredName ?? ""));
     const department = String(body.department ?? "").trim();
 
-    if (!email || password.length < 6) {
-      return NextResponse.json(
-        { error: "이메일과 비밀번호(6자 이상)를 입력해주세요." },
-        { status: 400 }
-      );
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
     const course = await findCourseByAccessToken(token);
 
     if (course) {
@@ -216,44 +195,21 @@ export async function POST(request: Request, { params }: Params) {
       }
 
       if (participant.type === "STUDENT") {
-        if (participant.profileComplete) {
-          return NextResponse.json(
-            { error: "이미 설정이 완료된 계정입니다." },
-            { status: 400 }
-          );
-        }
-        const studentUserId = participant.studentUserId;
-        if (!studentUserId) {
-          return NextResponse.json({ error: "등록된 이름이 없습니다." }, { status: 404 });
-        }
-        if (!studentId) {
-          return NextResponse.json({ error: "학번을 입력해주세요." }, { status: 400 });
-        }
-
-        const emailTaken = await prisma.user.findUnique({ where: { email } });
-        if (emailTaken && emailTaken.id !== studentUserId) {
-          return NextResponse.json(
-            { error: "이미 사용 중인 이메일입니다." },
-            { status: 400 }
-          );
-        }
-
-        const idTaken = await prisma.user.findUnique({ where: { studentId } });
-        if (idTaken && idTaken.id !== studentUserId) {
-          return NextResponse.json(
-            { error: "이미 사용 중인 학번입니다." },
-            { status: 400 }
-          );
-        }
-
-        await completeStudentProfile(studentUserId, email, studentId, passwordHash);
-
         return NextResponse.json({
           ok: true,
           role: "STUDENT",
           name: participant.name,
         });
       }
+
+      if (!email || password.length < 6) {
+        return NextResponse.json(
+          { error: "이메일과 비밀번호(6자 이상)를 입력해주세요." },
+          { status: 400 }
+        );
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
 
       const observer = await prisma.courseObserver.findUnique({
         where: { id: participant.observerId },
@@ -301,45 +257,23 @@ export async function POST(request: Request, { params }: Params) {
     });
 
     if (enrollment) {
-      if (enrollment.student.profileComplete) {
-        return NextResponse.json(
-          { error: "이미 설정이 완료된 계정입니다." },
-          { status: 400 }
-        );
+      if (enrollment.student.role === "STUDENT") {
+        return NextResponse.json({
+          ok: true,
+          role: "STUDENT",
+          name: enrollment.student.name,
+        });
       }
-      if (!studentId) {
-        return NextResponse.json({ error: "학번을 입력해주세요." }, { status: 400 });
-      }
-
-      const emailTaken = await prisma.user.findUnique({ where: { email } });
-      if (emailTaken && emailTaken.id !== enrollment.studentId) {
-        return NextResponse.json(
-          { error: "이미 사용 중인 이메일입니다." },
-          { status: 400 }
-        );
-      }
-
-      const idTaken = await prisma.user.findUnique({ where: { studentId } });
-      if (idTaken && idTaken.id !== enrollment.studentId) {
-        return NextResponse.json(
-          { error: "이미 사용 중인 학번입니다." },
-          { status: 400 }
-        );
-      }
-
-      await completeStudentProfile(
-        enrollment.studentId,
-        email,
-        studentId,
-        passwordHash
-      );
-
-      return NextResponse.json({
-        ok: true,
-        role: "STUDENT",
-        name: enrollment.student.name,
-      });
     }
+
+    if (!email || password.length < 6) {
+      return NextResponse.json(
+        { error: "이메일과 비밀번호(6자 이상)를 입력해주세요." },
+        { status: 400 }
+      );
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const observer = await prisma.courseObserver.findUnique({
       where: { accessToken: token },

@@ -60,5 +60,9 @@ export function canLeadProfessorEvaluate(
 }
 
 export function canManageOwnAssignment(role: string) {
-  return isStudent(role);
+  return isLeadProfessor(role);
+}
+
+export function canManageParticipationContent(role: string) {
+  return isLeadProfessor(role);
 }

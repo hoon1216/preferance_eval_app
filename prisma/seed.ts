@@ -1,8 +1,74 @@
 import { DEFAULT_INITIAL_PASSWORD } from "../src/lib/default-password";
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
+import { Gender, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
+
+const demoStudents: {
+  name: string;
+  birthDate: string;
+  gender: Gender;
+  occupation?: string;
+  residenceRegion?: string;
+  familyCount?: number;
+}[] = [
+  {
+    name: "이고객",
+    birthDate: "1990-03-12",
+    gender: "MALE",
+    occupation: "회사원",
+    residenceRegion: "서울",
+    familyCount: 3,
+  },
+  {
+    name: "박고객",
+    birthDate: "1985-07-22",
+    gender: "FEMALE",
+    occupation: "자영업",
+    residenceRegion: "경기",
+    familyCount: 4,
+  },
+  {
+    name: "최고객",
+    birthDate: "1992-11-05",
+    gender: "FEMALE",
+    residenceRegion: "부산",
+    familyCount: 2,
+  },
+];
+
+async function upsertStudent(
+  passwordHash: string,
+  data: (typeof demoStudents)[number]
+) {
+  const existing = await prisma.user.findFirst({
+    where: { role: "STUDENT", name: data.name },
+  });
+
+  if (existing) {
+    return prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        ...data,
+        email: null,
+        studentId: null,
+        profileComplete: true,
+        passwordHash,
+      },
+    });
+  }
+
+  return prisma.user.create({
+    data: {
+      ...data,
+      role: "STUDENT",
+      passwordHash,
+      profileComplete: true,
+      email: null,
+      studentId: null,
+    },
+  });
+}
 
 async function main() {
   const passwordHash = await bcrypt.hash(DEFAULT_INITIAL_PASSWORD, 10);
@@ -20,22 +86,7 @@ async function main() {
   });
 
   const students = await Promise.all(
-    [
-      { email: "student1@example.com", name: "이고객", studentId: "2024001" },
-      { email: "student2@example.com", name: "박고객", studentId: "2024002" },
-      { email: "student3@example.com", name: "최고객", studentId: "2024003" },
-    ].map((s) =>
-      prisma.user.upsert({
-        where: { email: s.email },
-        update: { profileComplete: true },
-        create: {
-          ...s,
-          passwordHash,
-          role: "STUDENT",
-          profileComplete: true,
-        },
-      })
-    )
+    demoStudents.map((s) => upsertStudent(passwordHash, s))
   );
 
   const course = await prisma.course.upsert({
@@ -112,7 +163,7 @@ async function main() {
 
   console.log("Seed complete.");
   console.log(`담당자: 김담당 / ${DEFAULT_INITIAL_PASSWORD}`);
-  console.log(`고객: 이고객, 박고객, 최고객 / ${DEFAULT_INITIAL_PASSWORD}`);
+  console.log("고객: 이고객, 박고객, 최고객 (이름만으로 접속)");
 }
 
 main()

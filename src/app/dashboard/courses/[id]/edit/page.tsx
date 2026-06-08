@@ -14,9 +14,12 @@ import {
   SURVEY_WEIGHT_LABEL,
   TEAM_MEMBER_EVAL_LABEL,
 } from "@/lib/ui-labels";
-import { DEFAULT_INITIAL_PASSWORD, displayOrUnregistered } from "@/lib/default-password";
+import { displayOrUnregistered } from "@/lib/default-password";
+import { GENDER_OPTIONS, formatGender } from "@/lib/gender-labels";
 import { canManageCourse } from "@/lib/permissions";
 import { parseJsonResponse } from "@/lib/parse-json-response";
+import type { Gender } from "@prisma/client";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
@@ -24,9 +27,14 @@ import { useCallback, useEffect, useState } from "react";
 type StudentRow = {
   id: string;
   name: string;
-  studentId: string | null;
-  email: string | null;
+  birthDate: string | null;
+  gender: Gender | null;
+  occupation: string | null;
+  residenceRegion: string | null;
+  familyCount: number | null;
+  notes: string | null;
   taskTitle: string | null;
+  presentationId: string | null;
 };
 
 type ObserverRow = {
@@ -50,7 +58,7 @@ function ParticipantTable({
   onDelete?: (id: string) => void;
 }) {
   const colCount =
-    (variant === "student" ? 5 : 4) + (showDelete ? 1 : 0);
+    (variant === "student" ? 9 : 4) + (showDelete ? 1 : 0);
 
   return (
     <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
@@ -62,9 +70,14 @@ function ParticipantTable({
             <th className="px-4 py-3">이름</th>
             {variant === "student" ? (
               <>
-                <th className="px-4 py-3">학번</th>
-                <th className="px-4 py-3">이메일</th>
+                <th className="px-4 py-3">생년월일</th>
+                <th className="px-4 py-3">성별</th>
+                <th className="px-4 py-3">직업</th>
+                <th className="px-4 py-3">거주지역</th>
+                <th className="px-4 py-3">가족수</th>
+                <th className="px-4 py-3">기타사항</th>
                 <th className="px-4 py-3">{PARTICIPATION_TITLE_LABEL}</th>
+                <th className="px-4 py-3">조사내용</th>
               </>
             ) : (
               <>
@@ -90,13 +103,37 @@ function ParticipantTable({
                 {variant === "student" ? (
                   <>
                     <td className="px-4 py-3">
-                      {displayOrUnregistered((row as StudentRow).studentId)}
+                      {displayOrUnregistered((row as StudentRow).birthDate)}
                     </td>
                     <td className="px-4 py-3">
-                      {displayOrUnregistered((row as StudentRow).email)}
+                      {formatGender((row as StudentRow).gender)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {displayOrUnregistered((row as StudentRow).occupation)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {displayOrUnregistered((row as StudentRow).residenceRegion)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {(row as StudentRow).familyCount ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 max-w-[12rem] truncate" title={(row as StudentRow).notes ?? ""}>
+                      {displayOrUnregistered((row as StudentRow).notes)}
                     </td>
                     <td className="px-4 py-3">
                       {displayOrUnregistered((row as StudentRow).taskTitle)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {(row as StudentRow).presentationId ? (
+                        <Link
+                          href={`/presentations/${(row as StudentRow).presentationId}/prep`}
+                          className="text-blue-600 hover:underline"
+                        >
+                          {(row as StudentRow).taskTitle ? "편집" : "등록"}
+                        </Link>
+                      ) : (
+                        "—"
+                      )}
                     </td>
                   </>
                 ) : (
@@ -139,6 +176,8 @@ export default function EvaluationEditPage() {
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [observers, setObservers] = useState<ObserverRow[]>([]);
   const [studentName, setStudentName] = useState("");
+  const [studentBirthDate, setStudentBirthDate] = useState("");
+  const [studentGender, setStudentGender] = useState<Gender | "">("");
   const [observerName, setObserverName] = useState("");
   const [editName, setEditName] = useState("");
   const [editDateTime, setEditDateTime] = useState("");
@@ -174,9 +213,14 @@ export default function EvaluationEditPage() {
         list.map((s: StudentRow) => ({
           id: s.id,
           name: s.name,
-          studentId: s.studentId,
-          email: s.email,
+          birthDate: s.birthDate,
+          gender: s.gender,
+          occupation: s.occupation,
+          residenceRegion: s.residenceRegion,
+          familyCount: s.familyCount,
+          notes: s.notes,
           taskTitle: s.taskTitle ?? null,
+          presentationId: s.presentationId ?? null,
         }))
       );
     }
@@ -219,7 +263,11 @@ export default function EvaluationEditPage() {
     const res = await fetch(`/api/courses/${courseId}/students`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: studentName }),
+      body: JSON.stringify({
+        name: studentName,
+        birthDate: studentBirthDate,
+        gender: studentGender,
+      }),
     });
     const json = await parseJsonResponse<{ error?: string }>(res);
     if (!res.ok) {
@@ -227,6 +275,8 @@ export default function EvaluationEditPage() {
       return;
     }
     setStudentName("");
+    setStudentBirthDate("");
+    setStudentGender("");
     load();
   }
 
@@ -423,15 +473,22 @@ export default function EvaluationEditPage() {
       </div>
 
       <div className="mb-6 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        초기 비밀번호는 <strong>{DEFAULT_INITIAL_PASSWORD}</strong> 입니다. 공통 접속 링크에서
-        등록된 이름을 입력한 뒤 고객은 학번·이메일, 팀멤버는 학과·이메일을 등록하고 비밀번호를
-        개별 변경할 수 있습니다.
+        고객 추가 시 <strong>이름·생년월일·성별</strong>은 필수입니다. 고객은 회원가입 없이{" "}
+        <Link href="/login/customer" className="underline">
+          고객 접속 화면
+        </Link>
+        에서 이름만 입력해 접속합니다. 조사 내용은 <strong>조사내용</strong> 열에서 등록합니다.
       </div>
 
       <div className="mb-8 space-y-4">
-        <form onSubmit={addStudent} className="flex flex-wrap items-end gap-2">
-          <div className="flex-1 min-w-[200px]">
-            <label className="text-sm font-medium">고객 추가 (이름만)</label>
+        <form
+          onSubmit={addStudent}
+          className="flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-white p-4"
+        >
+          <div className="min-w-[10rem] flex-1">
+            <label className="text-sm font-medium">
+              이름 <span className="text-red-600">*</span>
+            </label>
             <input
               placeholder="고객 이름"
               required
@@ -439,6 +496,36 @@ export default function EvaluationEditPage() {
               onChange={(e) => setStudentName(e.target.value)}
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             />
+          </div>
+          <div className="min-w-[10rem] flex-1">
+            <label className="text-sm font-medium">
+              생년월일 <span className="text-red-600">*</span>
+            </label>
+            <input
+              type="date"
+              required
+              value={studentBirthDate}
+              onChange={(e) => setStudentBirthDate(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="min-w-[8rem] flex-1">
+            <label className="text-sm font-medium">
+              성별 <span className="text-red-600">*</span>
+            </label>
+            <select
+              required
+              value={studentGender}
+              onChange={(e) => setStudentGender(e.target.value as Gender | "")}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            >
+              <option value="">선택</option>
+              {GENDER_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
           <button
             type="submit"

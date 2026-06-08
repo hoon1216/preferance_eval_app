@@ -15,6 +15,7 @@
     "db:reset:seed": "npx tsx prisma/reset-all.ts --seed",
     "db:clear-observers": "npx tsx prisma/clear-observers.ts",
     "db:backfill-tokens": "npx tsx prisma/backfill-course-tokens.ts",
+    "db:backfill-customers": "npx tsx prisma/backfill-customers.ts",
     "db:sync": "prisma db push --accept-data-loss && prisma generate",
     "postinstall": "prisma generate"
   },
