@@ -1,3 +1,5 @@
+"use client";
+
 import { SURVEY_LABEL } from "@/lib/ui-labels";
 import { useRouter } from "next/navigation";
 import { useState } from "react";

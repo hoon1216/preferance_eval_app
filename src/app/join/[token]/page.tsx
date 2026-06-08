@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import { DEFAULT_INITIAL_PASSWORD } from "@/lib/default-password";
 import { ROLE_LABELS } from "@/lib/role-permissions";
+import { parseJsonResponse } from "@/lib/parse-json-response";
 import { useEffect, useState } from "react";
 
 type JoinInfo =
