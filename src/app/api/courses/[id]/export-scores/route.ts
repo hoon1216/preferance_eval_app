@@ -51,11 +51,11 @@ export async function GET(_request: Request, { params }: Params) {
     "#",
     "학번",
     "이름",
-    "평가 과제",
-    "동료평가",
-    "참관 교수 평가",
-    "담당 교수 평가",
-    "평가결과",
+    "참여 제목",
+    "고객 의견",
+    "팀멤버 의견",
+    "담당자 의견",
+    "조사 결과",
     "순위",
   ];
   const lines = [

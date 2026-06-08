@@ -122,26 +122,26 @@ export function CombinedFeedbackPdfDocument(props: CombinedFeedbackPdfProps) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>발표 평가 종합 피드백</Text>
+        <Text style={styles.title}>선호도 조사 종합 피드백</Text>
         <Text style={styles.subtitle}>
           {props.courseName} · {props.semester}
         </Text>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>발표 정보</Text>
+          <Text style={styles.sectionTitle}>참여 정보</Text>
           <Text>
-            발표자: {props.presenterName} ({props.presenterStudentId})
+            고객: {props.presenterName} ({props.presenterStudentId})
           </Text>
-          <Text>과제 제목: {props.title}</Text>
+          <Text>참여 제목: {props.title}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>학생 평가</Text>
+          <Text style={styles.sectionTitle}>고객 의견</Text>
           <GroupedItemsPdf items={props.studentEvaluations} />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>교수 평가</Text>
+          <Text style={styles.sectionTitle}>담당자·팀멤버 의견</Text>
           <GroupedItemsPdf items={professorItems} />
         </View>
       </Page>

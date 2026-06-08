@@ -12,7 +12,7 @@ async function main() {
     update: { profileComplete: true },
     create: {
       email: "prof@example.com",
-      name: "김교수",
+      name: "김담당",
       passwordHash,
       role: "PROFESSOR",
       profileComplete: true,
@@ -21,9 +21,9 @@ async function main() {
 
   const students = await Promise.all(
     [
-      { email: "student1@example.com", name: "이학생", studentId: "2024001" },
-      { email: "student2@example.com", name: "박학생", studentId: "2024002" },
-      { email: "student3@example.com", name: "최학생", studentId: "2024003" },
+      { email: "student1@example.com", name: "이고객", studentId: "2024001" },
+      { email: "student2@example.com", name: "박고객", studentId: "2024002" },
+      { email: "student3@example.com", name: "최고객", studentId: "2024003" },
     ].map((s) =>
       prisma.user.upsert({
         where: { email: s.email },
@@ -111,8 +111,8 @@ async function main() {
   }
 
   console.log("Seed complete.");
-  console.log(`Professor: 김교수 / ${DEFAULT_INITIAL_PASSWORD}`);
-  console.log(`Students: 이학생, 박학생, 최학생 / ${DEFAULT_INITIAL_PASSWORD}`);
+  console.log(`담당자: 김담당 / ${DEFAULT_INITIAL_PASSWORD}`);
+  console.log(`고객: 이고객, 박고객, 최고객 / ${DEFAULT_INITIAL_PASSWORD}`);
 }
 
 main()

@@ -33,7 +33,7 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json(observer, { status: 201 });
   } catch {
     return NextResponse.json(
-      { error: "같은 이름의 참관교수가 이미 등록되어 있습니다." },
+      { error: "같은 이름의 팀멤버가 이미 등록되어 있습니다." },
       { status: 400 }
     );
   }

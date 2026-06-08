@@ -93,7 +93,7 @@ async function getFeedbackPdf(_request: Request, { params }: Params) {
   );
 
   const filename = encodeURIComponent(
-    `${presentation.presenter.name}_평가종합_${presentation.title ?? "발표"}.pdf`
+    `${presentation.presenter.name}_조사종합_${presentation.title ?? "참여"}.pdf`
   );
 
   return new NextResponse(new Uint8Array(buffer), {

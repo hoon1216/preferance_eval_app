@@ -1,5 +1,5 @@
 function filenameFromDisposition(header: string | null) {
-  if (!header) return "평가_피드백.pdf";
+  if (!header) return "조사_피드백.pdf";
   const utf8 = header.match(/filename\*=UTF-8''([^;]+)/i);
   if (utf8?.[1]) {
     try {
@@ -9,7 +9,7 @@ function filenameFromDisposition(header: string | null) {
     }
   }
   const plain = header.match(/filename="?([^";]+)"?/i);
-  return plain?.[1] ?? "평가_피드백.pdf";
+  return plain?.[1] ?? "조사_피드백.pdf";
 }
 
 export async function downloadFeedbackPdf(

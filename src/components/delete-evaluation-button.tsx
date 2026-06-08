@@ -1,5 +1,4 @@
-"use client";
-
+import { SURVEY_LABEL } from "@/lib/ui-labels";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -21,7 +20,7 @@ export function DeleteEvaluationButton({
   const [loading, setLoading] = useState(false);
 
   async function onDelete() {
-    const ok = window.confirm(`"${evaluationName}" 평가를 삭제할까요?`);
+    const ok = window.confirm(`"${evaluationName}" ${SURVEY_LABEL}를 삭제할까요?`);
     if (!ok) return;
 
     setLoading(true);
@@ -29,7 +28,7 @@ export function DeleteEvaluationButton({
     setLoading(false);
 
     if (!res.ok) {
-      window.alert("평가 삭제에 실패했습니다.");
+      window.alert(`${SURVEY_LABEL} 삭제에 실패했습니다.`);
       return;
     }
 
@@ -41,8 +40,8 @@ export function DeleteEvaluationButton({
       type="button"
       onClick={onDelete}
       disabled={loading}
-      aria-label="평가 삭제"
-      title="평가 삭제"
+      aria-label={`${SURVEY_LABEL} 삭제`}
+      title={`${SURVEY_LABEL} 삭제`}
       className={
         variant === "card-header"
           ? pillBtn

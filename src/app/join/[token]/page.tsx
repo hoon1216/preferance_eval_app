@@ -4,7 +4,7 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import { DEFAULT_INITIAL_PASSWORD } from "@/lib/default-password";
-import { parseJsonResponse } from "@/lib/parse-json-response";
+import { ROLE_LABELS } from "@/lib/role-permissions";
 import { useEffect, useState } from "react";
 
 type JoinInfo =
@@ -173,7 +173,7 @@ export default function JoinPage() {
                 required
                 value={participantName}
                 onChange={(e) => setParticipantName(e.target.value)}
-                placeholder="평가에 등록된 이름"
+                placeholder="조사에 등록된 이름"
                 className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
               />
             </div>
@@ -195,7 +195,10 @@ export default function JoinPage() {
             {info.courseName} · {info.courseSemester}
           </p>
           <p className="mt-1 text-sm">
-            {info.type === "STUDENT" ? "학생" : "참관교수"}:{" "}
+            {info.type === "STUDENT"
+              ? ROLE_LABELS.STUDENT
+              : ROLE_LABELS.OBSERVER_PROFESSOR}
+            :{" "}
             <span className="font-semibold">{info.name}</span>
           </p>
         </>

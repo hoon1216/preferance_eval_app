@@ -26,14 +26,14 @@ export async function POST(request: Request, { params }: Params) {
     : null;
 
   if (!presenterId) {
-    return NextResponse.json({ error: "발표 학생을 선택해주세요." }, { status: 400 });
+    return NextResponse.json({ error: "고객을 선택해주세요." }, { status: 400 });
   }
 
   const enrollment = await prisma.courseEnrollment.findFirst({
     where: { courseId, studentId: presenterId },
   });
   if (!enrollment) {
-    return NextResponse.json({ error: "수강 등록된 학생만 발표자로 지정할 수 있습니다." }, { status: 400 });
+    return NextResponse.json({ error: "등록된 고객만 참여자로 지정할 수 있습니다." }, { status: 400 });
   }
 
   const count = await prisma.presentation.count({ where: { courseId } });

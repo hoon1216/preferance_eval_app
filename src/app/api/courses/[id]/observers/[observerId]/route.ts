@@ -24,7 +24,7 @@ export async function DELETE(_request: Request, { params }: Params) {
     where: { id: observerId, courseId },
   });
   if (!observer) {
-    return NextResponse.json({ error: "등록된 참관교수가 아닙니다." }, { status: 404 });
+    return NextResponse.json({ error: "등록된 팀멤버가 아닙니다." }, { status: 404 });
   }
 
   const linkedUserId = observer.userId;

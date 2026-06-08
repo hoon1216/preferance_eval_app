@@ -2,6 +2,10 @@
 
 import { ProfileModal } from "@/components/profile-modal";
 import { ROLE_LABELS } from "@/lib/role-permissions";
+import {
+  PARTICIPANT_CUSTOMERS_LABEL,
+  SURVEY_LIST_LABEL,
+} from "@/lib/ui-labels";
 import { pillButtonClass } from "@/lib/pill-button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -36,7 +40,9 @@ export function NavBar() {
       .catch(() => setCourseListHref("/dashboard"));
   }, [pathname, presentationMatch]);
 
-  const listLabel = presentationMatch ? "과제목록" : "평가 목록";
+  const listLabel = presentationMatch
+    ? PARTICIPANT_CUSTOMERS_LABEL
+    : SURVEY_LIST_LABEL;
   const listHref = presentationMatch ? courseListHref : "/dashboard";
   const onEvaluationListPage = pathname === "/dashboard";
 

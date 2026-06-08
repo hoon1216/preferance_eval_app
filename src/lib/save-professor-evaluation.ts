@@ -33,7 +33,7 @@ export async function saveProfessorEvaluation(
       : leadEvaluationFromPresentation(current);
 
   if (isProfessorEvaluationSubmitted(currentEval)) {
-    return { error: "이미 평가를 제출했습니다. 제출 후에는 수정할 수 없습니다." };
+    return { error: "이미 의견을 제출했습니다. 제출 후에는 수정할 수 없습니다." };
   }
 
   if (!isDraft) {

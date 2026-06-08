@@ -90,15 +90,15 @@ export function FeedbackPdfDocument(props: FeedbackPdfProps) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>발표 피어 평가 피드백</Text>
+        <Text style={styles.title}>선호도 조사 피드백</Text>
         <Text style={styles.subtitle}>
           {props.courseName} · {props.semester}
         </Text>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>발표 정보</Text>
+          <Text style={styles.sectionTitle}>참여 정보</Text>
           <Text style={styles.row}>
-            발표자: {props.presenterName} ({props.presenterStudentId})
+            고객: {props.presenterName} ({props.presenterStudentId})
           </Text>
           <Text style={styles.row}>제목: {props.title}</Text>
           <Text style={styles.row}>개요: {props.overview}</Text>
@@ -108,7 +108,7 @@ export function FeedbackPdfDocument(props: FeedbackPdfProps) {
           <Text>
             피어 {COMPLETENESS_LABEL} 평균: {props.peerAverage ?? "-"} / 10
           </Text>
-          <Text>교수 평가: {props.professorScore ?? "-"} / 10</Text>
+          <Text>담당자 의견: {props.professorScore ?? "-"} / 10</Text>
           <Text>최종 점수 (50%+50%): {props.finalGrade ?? "-"} / 10</Text>
         </View>
 

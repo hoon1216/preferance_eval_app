@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 type Params = { params: Promise<{ token: string }> };
 
 const duplicateNameError =
-  "같은 이름이 여러 명 등록되어 있습니다. 담당교수에게 문의해주세요.";
+  "같은 이름이 여러 명 등록되어 있습니다. 담당자에게 문의해주세요.";
 
 async function linkObserverToUser(
   observerId: string,

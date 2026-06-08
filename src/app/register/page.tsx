@@ -65,8 +65,8 @@ export default function RegisterPage() {
             }
             className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
           >
-            <option value="STUDENT">학생</option>
-            <option value="PROFESSOR">담당교수</option>
+            <option value="STUDENT">고객</option>
+            <option value="PROFESSOR">담당자</option>
           </select>
         </div>
         <div>

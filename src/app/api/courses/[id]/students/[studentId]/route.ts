@@ -24,7 +24,7 @@ export async function DELETE(_request: Request, { params }: Params) {
     where: { courseId, studentId },
   });
   if (!enrollment) {
-    return NextResponse.json({ error: "등록된 학생이 아닙니다." }, { status: 404 });
+    return NextResponse.json({ error: "등록된 고객이 아닙니다." }, { status: 404 });
   }
 
   const presentation = await prisma.presentation.findUnique({

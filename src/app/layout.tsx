@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Preferance Eval — 고객 선호도 평가",
-  description: "일반 고객 선호도 평가, 피드백 수집, 결과 PDF",
+  title: "Preferance Eval — 고객 선호도 조사",
+  description: "일반 고객 선호도 조사, 의견 수집, 결과 PDF",
 };
 
 export default function RootLayout({

@@ -12,6 +12,11 @@ import {
   isProfessorEvaluationSubmitted,
   type ProfessorEvaluationFormValues,
 } from "@/lib/professor-evaluation-display";
+import {
+  PARTICIPANT_CUSTOMERS_LABEL,
+  PARTICIPATION_LABEL,
+  SURVEY_LIST_LABEL,
+} from "@/lib/ui-labels";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -62,7 +67,7 @@ export function ProfessorAssignmentEvaluationPage({
         Presentation & { error?: string }
       >(res);
       if (!res.ok || !data) {
-        setLoadError(data?.error ?? "발표 정보를 불러오지 못했습니다.");
+        setLoadError(data?.error ?? "참여 정보를 불러오지 못했습니다.");
         return;
       }
       setPresentation(data);
@@ -130,7 +135,7 @@ export function ProfessorAssignmentEvaluationPage({
       <div className="mx-auto max-w-2xl px-4 py-10">
         <p className="text-red-600">{loadError}</p>
         <Link href="/dashboard" className="mt-4 inline-block text-blue-600 hover:underline">
-          평가 목록으로
+          {SURVEY_LIST_LABEL}으로
         </Link>
       </div>
     );
@@ -145,9 +150,9 @@ export function ProfessorAssignmentEvaluationPage({
   if (!presentation.isAssignmentReady) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-10">
-        <p className="text-zinc-600">아직 과제가 등록되지 않아 평가할 수 없습니다.</p>
+        <p className="text-zinc-600">아직 {PARTICIPATION_LABEL} 내용이 등록되지 않아 의견을 등록할 수 없습니다.</p>
         <Link href={courseHref} className="mt-4 inline-block text-blue-600 hover:underline">
-          평가 결과로 돌아가기
+          {PARTICIPANT_CUSTOMERS_LABEL}으로
         </Link>
       </div>
     );
@@ -156,9 +161,9 @@ export function ProfessorAssignmentEvaluationPage({
   if (isProfessorEvaluationSubmitted(presentation.professorEvaluation)) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-10">
-        <p className="text-green-700">이미 평가를 제출했습니다.</p>
+        <p className="text-green-700">이미 의견을 제출했습니다.</p>
         <Link href={courseHref} className="mt-4 inline-block text-blue-600 hover:underline">
-          평가 결과로 돌아가기
+          {PARTICIPANT_CUSTOMERS_LABEL}으로
         </Link>
       </div>
     );
@@ -168,7 +173,7 @@ export function ProfessorAssignmentEvaluationPage({
     <div className="mx-auto max-w-2xl px-4 py-10">
       <h1 className="text-2xl font-bold">{pageTitle}</h1>
       <p className="mt-1 text-zinc-600">
-        발표자: {presentation.presenter.name} (
+        고객: {presentation.presenter.name} (
         {presentation.presenter.studentId ?? "학번 미등록"})
       </p>
       <p className="mt-1 text-sm text-zinc-500">

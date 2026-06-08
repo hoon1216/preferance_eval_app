@@ -35,7 +35,7 @@ export async function GET(_request: Request, { params }: Params) {
     return NextResponse.json(
       {
         error:
-          "발표 정보를 불러오지 못했습니다. 개발 서버를 재시작한 뒤 npm run db:generate를 실행해 주세요.",
+          "참여 정보를 불러오지 못했습니다. 개발 서버를 재시작한 뒤 npm run db:generate를 실행해 주세요.",
       },
       { status: 500 }
     );
@@ -159,7 +159,7 @@ async function patchPresentation(request: Request, { params }: Params) {
       Boolean(presentation.overview?.trim());
     if (!assignmentReady) {
       return NextResponse.json(
-        { error: "과제가 등록된 발표만 평가할 수 있습니다." },
+        { error: "참여 내용이 등록된 경우에만 의견을 등록할 수 있습니다." },
         { status: 400 }
       );
     }
@@ -191,7 +191,7 @@ async function patchPresentation(request: Request, { params }: Params) {
       Boolean(presentation.overview?.trim());
     if (!assignmentReady) {
       return NextResponse.json(
-        { error: "과제가 등록된 발표만 평가할 수 있습니다." },
+        { error: "참여 내용이 등록된 경우에만 의견을 등록할 수 있습니다." },
         { status: 400 }
       );
     }
@@ -239,8 +239,8 @@ async function patchPresentation(request: Request, { params }: Params) {
           : undefined;
 
     for (const [label, score] of [
-      ["담당 교수", professorScore],
-      ["참관 교수", observerProfessorScore],
+      ["담당자", professorScore],
+      ["팀멤버", observerProfessorScore],
     ] as const) {
       if (score !== null && Number.isNaN(score)) {
         return NextResponse.json(

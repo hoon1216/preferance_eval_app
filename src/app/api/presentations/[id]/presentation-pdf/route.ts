@@ -41,7 +41,7 @@ export async function GET(_request: Request, { params }: Params) {
 
   const buffer = await readPresentationPdfBuffer(storedPath);
   const filename = encodeURIComponent(
-    `${presentation.title ?? "발표"}_발표자료.pdf`
+    `${presentation.title ?? "참여"}_첨부자료.pdf`
   );
 
   return new NextResponse(new Uint8Array(buffer), {

@@ -127,7 +127,7 @@ export async function PATCH(request: Request) {
     if (studentId !== undefined) {
       if (user.role !== "STUDENT") {
         return NextResponse.json(
-          { error: "학번은 학생만 변경할 수 있습니다." },
+          { error: "학번은 고객만 변경할 수 있습니다." },
           { status: 400 }
         );
       }

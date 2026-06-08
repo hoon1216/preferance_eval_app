@@ -33,7 +33,7 @@ export async function POST(request: Request, { params }: Params) {
 
     if (await courseHasStudentWithName(courseId, name)) {
       return NextResponse.json(
-        { error: "같은 이름의 학생이 이미 등록되어 있습니다." },
+        { error: "같은 이름의 고객이 이미 등록되어 있습니다." },
         { status: 400 }
       );
     }
@@ -88,7 +88,7 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json(
       {
         error:
-          "학생 등록 중 서버 오류가 발생했습니다. 개발 서버를 재시작한 뒤 `npm run db:push`를 실행해 주세요.",
+          "고객 등록 중 서버 오류가 발생했습니다. 개발 서버를 재시작한 뒤 `npm run db:push`를 실행해 주세요.",
       },
       { status: 500 }
     );
@@ -103,7 +103,7 @@ export async function GET(_request: Request, { params }: Params) {
     return NextResponse.json(
       {
         error:
-          "학생 목록을 불러오지 못했습니다. `npm run db:push` 후 개발 서버를 재시작해 주세요.",
+          "고객 목록을 불러오지 못했습니다. `npm run db:push` 후 개발 서버를 재시작해 주세요.",
       },
       { status: 500 }
     );

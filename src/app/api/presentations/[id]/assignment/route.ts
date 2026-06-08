@@ -31,7 +31,7 @@ async function assertStudentPresentation(id: string, userId: string) {
   if (presentation.status === "CLOSED") {
     return {
       error: NextResponse.json(
-        { error: "마감된 발표는 수정할 수 없습니다." },
+        { error: "마감된 참여 내용은 수정할 수 없습니다." },
         { status: 400 }
       ),
     };
@@ -104,7 +104,7 @@ export async function POST(request: Request, { params }: Params) {
     } else if (pdfFile) {
       if (!isPdfFile(pdfFile)) {
         return NextResponse.json(
-          { error: "발표 PDF는 PDF 파일만 첨부할 수 있습니다." },
+          { error: "첨부 PDF는 PDF 파일만 업로드할 수 있습니다." },
           { status: 400 }
         );
       }

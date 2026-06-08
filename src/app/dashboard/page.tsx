@@ -7,6 +7,7 @@ import {
 import { listObserverCoursesForUser } from "@/lib/observer-courses";
 import { canManageCourse } from "@/lib/permissions";
 import { pillButtonPrimaryClass } from "@/lib/pill-button";
+import { ADD_SURVEY_LABEL, SURVEY_LIST_LABEL } from "@/lib/ui-labels";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -70,15 +71,15 @@ export default async function DashboardPage() {
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-zinc-900">
           {isProfessor || isObserver
-            ? "평가 목록"
-            : `${session.user.name} 평가 목록`}
+            ? SURVEY_LIST_LABEL
+            : `${session.user.name} ${SURVEY_LIST_LABEL}`}
         </h1>
         {isProfessor && (
           <Link
             href="/dashboard/courses/new"
             className={`shrink-0 ${pillButtonPrimaryClass}`}
           >
-            평가 추가
+            {ADD_SURVEY_LABEL}
           </Link>
         )}
       </div>
@@ -86,10 +87,10 @@ export default async function DashboardPage() {
       {courses.length === 0 ? (
         <p className="mt-8 text-zinc-600">
           {isProfessor
-            ? "아직 등록된 평가가 없습니다. 평가 추가로 새 평가를 만들어주세요."
+            ? "아직 등록된 조사가 없습니다. 조사 추가로 새 조사를 만들어주세요."
             : isObserver
-              ? "등록된 평가가 없습니다. 담당 교수가 참관교수로 등록해 주시면 표시됩니다."
-              : "등록된 평가가 없습니다. 교수님이 수강 등록해 주시면 표시됩니다."}
+              ? "등록된 조사가 없습니다. 담당자가 팀멤버로 등록해 주시면 표시됩니다."
+              : "등록된 조사가 없습니다. 담당자가 고객 등록해 주시면 표시됩니다."}
         </p>
       ) : (
         <div className="mt-8 flex flex-col gap-5">
@@ -126,7 +127,7 @@ export default async function DashboardPage() {
 
             const subtitle =
               "professorName" in course && course.professorName
-                ? `담당교수 ${course.professorName}`
+                ? `담당자 ${course.professorName}`
                 : undefined;
 
             const observerCount =

@@ -8,6 +8,7 @@ import {
   SCORE_MIN,
   SCORE_STEP,
 } from "@/lib/evaluation-labels";
+import { RATE_SUBMIT_LABEL } from "@/lib/ui-labels";
 
 type Props = {
   completenessScore: number;
@@ -66,7 +67,7 @@ export function AssignmentEvaluationForm({
           value={comment}
           disabled={readOnly}
           onChange={(e) => onCommentChange(e.target.value)}
-          placeholder="과제에 대한 평가 의견을 작성해주세요"
+          placeholder="참여 내용에 대한 의견을 작성해주세요"
           className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 disabled:opacity-60"
         />
       </div>
@@ -91,7 +92,7 @@ export function AssignmentEvaluationForm({
             disabled={loading || draftSaving}
             className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? "제출 중..." : "평가 제출"}
+            {loading ? "제출 중..." : RATE_SUBMIT_LABEL}
           </button>
         </div>
       )}

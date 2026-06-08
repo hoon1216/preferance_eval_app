@@ -7,6 +7,11 @@ import { normalizeWeights } from "@/lib/grades";
 import { getCourseForUser, isLeadProfessor } from "@/lib/permissions";
 import { presentationPdfFileExists } from "@/lib/presentation-pdf-storage";
 import { prisma } from "@/lib/prisma";
+import {
+  SURVEY_DATETIME_LABEL,
+  SURVEY_NAME_LABEL,
+  SURVEY_WEIGHT_LABEL,
+} from "@/lib/ui-labels";
 import { NextResponse } from "next/server";
 
 type Params = { params: Promise<{ id: string }> };
@@ -111,7 +116,7 @@ export async function PATCH(request: Request, { params }: Params) {
   if (body.name !== undefined) {
     const name = String(body.name).trim();
     if (!name) {
-      return NextResponse.json({ error: "평가명을 입력해주세요." }, { status: 400 });
+      return NextResponse.json({ error: `${SURVEY_NAME_LABEL}을 입력해주세요.` }, { status: 400 });
     }
     data.name = name;
   }
@@ -119,7 +124,7 @@ export async function PATCH(request: Request, { params }: Params) {
   if (body.semester !== undefined) {
     const semester = String(body.semester).trim();
     if (!semester) {
-      return NextResponse.json({ error: "평가 일시를 입력해주세요." }, { status: 400 });
+      return NextResponse.json({ error: `${SURVEY_DATETIME_LABEL}를 입력해주세요.` }, { status: 400 });
     }
     data.semester = semester;
   }
@@ -135,7 +140,7 @@ export async function PATCH(request: Request, { params }: Params) {
     const normalized = normalizeWeights(peer, observer, lead);
     if (!normalized) {
       return NextResponse.json(
-        { error: "평가 비중 합계는 0보다 커야 합니다." },
+        { error: `${SURVEY_WEIGHT_LABEL} 합계는 0보다 커야 합니다.` },
         { status: 400 }
       );
     }

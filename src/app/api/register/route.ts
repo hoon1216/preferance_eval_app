@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     }
 
     if (role === "STUDENT" && !studentId) {
-      return NextResponse.json({ error: "학생은 학번이 필요합니다." }, { status: 400 });
+      return NextResponse.json({ error: "고객은 학번이 필요합니다." }, { status: 400 });
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });

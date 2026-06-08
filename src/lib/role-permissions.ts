@@ -3,9 +3,9 @@
 export type Role = "PROFESSOR" | "STUDENT" | "OBSERVER_PROFESSOR";
 
 export const ROLE_LABELS: Record<Role, string> = {
-  PROFESSOR: "담당교수",
-  OBSERVER_PROFESSOR: "참관교수",
-  STUDENT: "학생",
+  PROFESSOR: "담당자",
+  OBSERVER_PROFESSOR: "팀멤버",
+  STUDENT: "고객",
 };
 
 export type LoginRoleKey = "PROFESSOR" | "STUDENT" | "OBSERVER";

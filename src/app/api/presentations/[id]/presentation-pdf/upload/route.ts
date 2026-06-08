@@ -49,7 +49,7 @@ export async function POST(request: Request, { params }: Params) {
 
   if (presentation.status === "CLOSED") {
     return NextResponse.json(
-      { error: "마감된 발표는 수정할 수 없습니다." },
+      { error: "마감된 참여 내용은 수정할 수 없습니다." },
       { status: 400 }
     );
   }

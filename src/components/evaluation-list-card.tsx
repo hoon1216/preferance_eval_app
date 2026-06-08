@@ -1,5 +1,6 @@
 import { DeleteEvaluationButton } from "@/components/delete-evaluation-button";
 import { LinkActions } from "@/components/link-actions";
+import { SURVEY_DATETIME_LABEL, SURVEY_NAME_LABEL } from "@/lib/ui-labels";
 import Link from "next/link";
 
 function CardDivider() {
@@ -16,11 +17,11 @@ function CourseParticipantStats({
   return (
     <div className="flex shrink-0 items-center gap-8 text-zinc-900">
       <div className="text-center">
-        <p className="text-xs leading-tight text-zinc-500">참여학생</p>
+        <p className="text-xs leading-tight text-zinc-500">참여고객</p>
         <p className="mt-0.5 text-base font-bold leading-tight">{studentCount}명</p>
       </div>
       <div className="text-center">
-        <p className="text-xs leading-tight text-zinc-500">참관 교수</p>
+        <p className="text-xs leading-tight text-zinc-500">팀멤버</p>
         <p className="mt-0.5 text-base font-bold leading-tight">{observerCount}명</p>
       </div>
     </div>
@@ -51,7 +52,7 @@ export function ProfessorEvaluationListCard({
           href={`/dashboard/courses/${courseId}`}
           className="min-w-0 flex-1"
         >
-          <p className="text-xs text-zinc-500">평가명</p>
+          <p className="text-xs text-zinc-500">{SURVEY_NAME_LABEL}</p>
           <h2 className="mt-0.5 text-xl font-bold text-zinc-900">{name}</h2>
         </Link>
         <div className="flex shrink-0 items-center gap-5">
@@ -71,7 +72,7 @@ export function ProfessorEvaluationListCard({
 
       <div className="flex flex-wrap items-end justify-between gap-4 p-5">
         <Link href={`/dashboard/courses/${courseId}`}>
-          <p className="text-xs text-zinc-500">평가 일시</p>
+          <p className="text-xs text-zinc-500">{SURVEY_DATETIME_LABEL}</p>
           <p className="mt-0.5 text-sm text-zinc-900">{semester}</p>
         </Link>
         {joinUrl && (
@@ -109,7 +110,7 @@ export function ReadonlyEvaluationListCard({
     >
       <div className="flex items-start justify-between gap-4 p-5">
         <div className="min-w-0 flex-1">
-          <p className="text-xs text-zinc-500">평가명</p>
+          <p className="text-xs text-zinc-500">{SURVEY_NAME_LABEL}</p>
           <h2 className="mt-0.5 text-xl font-bold text-zinc-900">{name}</h2>
           {subtitle && (
             <p className="mt-1 text-xs text-zinc-500">{subtitle}</p>
@@ -124,7 +125,7 @@ export function ReadonlyEvaluationListCard({
       </div>
       <CardDivider />
       <div className="p-5">
-        <p className="text-xs text-zinc-500">평가 일시</p>
+        <p className="text-xs text-zinc-500">{SURVEY_DATETIME_LABEL}</p>
         <p className="mt-0.5 text-sm text-zinc-900">{semester}</p>
       </div>
     </Link>

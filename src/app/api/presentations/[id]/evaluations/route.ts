@@ -64,7 +64,7 @@ async function assertCanEvaluate(
   if (!registered || presentation.status !== "READY") {
     return {
       error: NextResponse.json(
-        { error: "과제가 등록된 발표만 평가할 수 있습니다." },
+        { error: "참여 내용이 등록된 경우에만 의견을 등록할 수 있습니다." },
         { status: 400 }
       ),
     };
@@ -73,7 +73,7 @@ async function assertCanEvaluate(
   if (presentation.presenterId === evaluatorId) {
     return {
       error: NextResponse.json(
-        { error: "본인 과제는 평가할 수 없습니다." },
+        { error: "본인 참여 내용에는 의견을 등록할 수 없습니다." },
         { status: 400 }
       ),
     };
@@ -98,7 +98,7 @@ async function assertCanEvaluate(
   if (!participantIds.has(evaluatorId)) {
     return {
       error: NextResponse.json(
-        { error: "이 평가에 등록된 학생만 평가할 수 있습니다." },
+        { error: "이 조사에 등록된 고객만 의견을 등록할 수 있습니다." },
         { status: 403 }
       ),
     };
@@ -115,7 +115,7 @@ export async function POST(request: Request, { params }: Params) {
   } catch (err) {
     console.error("POST /evaluations failed:", err);
     return NextResponse.json(
-      { error: "평가 저장 중 서버 오류가 발생했습니다." },
+      { error: "의견 저장 중 서버 오류가 발생했습니다." },
       { status: 500 }
     );
   }
@@ -124,7 +124,7 @@ export async function POST(request: Request, { params }: Params) {
 async function postEvaluation(request: Request, { params }: Params) {
   const session = await auth();
   if (!session?.user || !canPeerEvaluate(session.user.role)) {
-    return NextResponse.json({ error: "학생만 평가할 수 있습니다." }, { status: 403 });
+    return NextResponse.json({ error: "고객만 의견을 등록할 수 있습니다." }, { status: 403 });
   }
 
   const { id: presentationId } = await params;
@@ -145,7 +145,7 @@ async function postEvaluation(request: Request, { params }: Params) {
 
     if (await isEvaluationSubmitted(presentationId, session.user.id)) {
       return NextResponse.json(
-        { error: "이미 평가를 제출했습니다. 제출 후에는 수정할 수 없습니다." },
+        { error: "이미 의견을 제출했습니다. 제출 후에는 수정할 수 없습니다." },
         { status: 400 }
       );
     }
@@ -161,7 +161,7 @@ async function postEvaluation(request: Request, { params }: Params) {
 
     if (result.error === "ALREADY_SUBMITTED") {
       return NextResponse.json(
-        { error: "이미 평가를 제출했습니다. 제출 후에는 수정할 수 없습니다." },
+        { error: "이미 의견을 제출했습니다. 제출 후에는 수정할 수 없습니다." },
         { status: 400 }
       );
     }
@@ -178,7 +178,7 @@ async function postEvaluation(request: Request, { params }: Params) {
   }
 
   if (await isEvaluationSubmitted(presentationId, session.user.id)) {
-    return NextResponse.json({ error: "이미 평가를 제출했습니다." }, { status: 400 });
+    return NextResponse.json({ error: "이미 의견을 제출했습니다." }, { status: 400 });
   }
 
   const result = await upsertEvaluation({
@@ -191,7 +191,7 @@ async function postEvaluation(request: Request, { params }: Params) {
   });
 
   if (result.error === "ALREADY_SUBMITTED") {
-    return NextResponse.json({ error: "이미 평가를 제출했습니다." }, { status: 400 });
+    return NextResponse.json({ error: "이미 의견을 제출했습니다." }, { status: 400 });
   }
 
   return NextResponse.json(result.evaluation, { status: 201 });
@@ -203,7 +203,7 @@ export async function GET(_request: Request, { params }: Params) {
   } catch (err) {
     console.error("GET /evaluations failed:", err);
     return NextResponse.json(
-      { error: "평가 정보를 불러오지 못했습니다." },
+      { error: "조사 정보를 불러오지 못했습니다." },
       { status: 500 }
     );
   }

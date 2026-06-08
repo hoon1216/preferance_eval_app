@@ -59,7 +59,7 @@ export default function EvaluationResultsPage() {
       return;
     }
     const body = (await res.json().catch(() => null)) as { error?: string } | null;
-    setLoadError(body?.error ?? "평가 정보를 불러오지 못했습니다.");
+    setLoadError(body?.error ?? "조사 정보를 불러오지 못했습니다.");
   }, [courseId]);
 
   useEffect(() => {
@@ -90,7 +90,7 @@ export default function EvaluationResultsPage() {
   if (!canViewCourseResults(role ?? "")) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-10 text-red-600">
-        이 평가에 접근할 권한이 없습니다.
+        이 조사에 접근할 권한이 없습니다.
       </div>
     );
   }

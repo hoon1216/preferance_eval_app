@@ -12,6 +12,20 @@ import {
   submittedObserverEvaluation,
 } from "@/lib/professor-evaluation-display";
 import {
+  ATTACHMENT_LABEL,
+  CONTINUE_RATE_LABEL,
+  CUSTOMER_EVAL_LABEL,
+  MANAGER_EVAL_LABEL,
+  OPINION_SECTION_LABEL,
+  PARTICIPANT_CUSTOMERS_LABEL,
+  PARTICIPATION_EDIT_LABEL,
+  PARTICIPATION_LABEL,
+  PARTICIPATION_REGISTER_LABEL,
+  RATE_ACTION_LABEL,
+  RATE_COMPLETE_LABEL,
+  TEAM_MEMBER_EVAL_LABEL,
+} from "@/lib/ui-labels";
+import {
   assignmentBodyCell,
   assignmentHeaderCell,
   bodyCell,
@@ -108,32 +122,32 @@ export function StudentEvaluationView({
 
   function openPeerComments(p: Presentation) {
     setModal({
-      title: `${p.presenter.name} · 학생 평가`,
+      title: `${p.presenter.name} · ${CUSTOMER_EVAL_LABEL}`,
       items: evaluationContentsFromParts(
         submittedEvaluations(p.evaluations).map((e) => ({
           reason: e.reason,
           suggestions: e.suggestions,
         }))
       ),
-      emptyMessage: "등록된 학생 평가 내용이 없습니다.",
+      emptyMessage: `등록된 ${CUSTOMER_EVAL_LABEL} 내용이 없습니다.`,
     });
   }
 
   function openObserverComment(p: Presentation) {
     const evalData = submittedObserverEvaluation(p);
     setModal({
-      title: `${p.presenter.name} · 참관 교수 평가`,
+      title: `${p.presenter.name} · ${TEAM_MEMBER_EVAL_LABEL}`,
       items: evalData ? professorEvaluationForModal(evalData) : [],
-      emptyMessage: "등록된 참관 교수 코멘트가 없습니다.",
+      emptyMessage: `등록된 ${TEAM_MEMBER_EVAL_LABEL} 코멘트가 없습니다.`,
     });
   }
 
   function openProfessorComment(p: Presentation) {
     const evalData = submittedLeadEvaluation(p);
     setModal({
-      title: `${p.presenter.name} · 담당 교수 평가`,
+      title: `${p.presenter.name} · ${MANAGER_EVAL_LABEL}`,
       items: evalData ? professorEvaluationForModal(evalData) : [],
-      emptyMessage: "등록된 담당 교수 코멘트가 없습니다.",
+      emptyMessage: `등록된 ${MANAGER_EVAL_LABEL} 코멘트가 없습니다.`,
     });
   }
 
@@ -158,7 +172,7 @@ export function StudentEvaluationView({
         <div className="mb-2 flex flex-wrap items-center justify-end gap-2">
           {myPdfMissing && (
             <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
-              과제 미첨부
+              자료 미첨부
             </span>
           )}
           {myPresentation && myRegistered && (
@@ -166,7 +180,7 @@ export function StudentEvaluationView({
               href={`/presentations/${myPresentation.id}/prep`}
               className={tableActionBtn}
             >
-              등록과제 편집
+              {PARTICIPATION_EDIT_LABEL}
             </Link>
           )}
         </div>
@@ -178,10 +192,10 @@ export function StudentEvaluationView({
             className={`grid border-b-2 border-zinc-800 ${EVALUATION_TABLE_SPLIT}`}
           >
             <h2 className="px-4 py-3 text-center text-sm font-semibold lg:border-r lg:border-r-zinc-800">
-              평가 과제 목록
+              {PARTICIPANT_CUSTOMERS_LABEL}
             </h2>
             <h2 className="px-4 py-3 text-center text-sm font-semibold">
-              평가 코멘트
+              {OPINION_SECTION_LABEL}
             </h2>
           </div>
 
@@ -190,21 +204,21 @@ export function StudentEvaluationView({
             <div className={indexHeaderCell}>#</div>
             <div className={nameHeaderCell}>이름</div>
             <div className={nameHeaderCell}>학번</div>
-            <div className={assignmentHeaderCell}>과제</div>
-            <div className={nameHeaderCell}>발표자료</div>
-            <div className={nameHeaderCell}>평가</div>
+            <div className={assignmentHeaderCell}>{PARTICIPATION_LABEL}</div>
+            <div className={nameHeaderCell}>{ATTACHMENT_LABEL}</div>
+            <div className={nameHeaderCell}>{OPINION_SECTION_LABEL}</div>
           </div>
           <div className={COMMENT_GRID_STUDENT}>
-            <div className={commentHeaderCell}>학생</div>
-            <div className={commentHeaderCell}>참관교수</div>
-            <div className={commentHeaderCell}>담당교수</div>
+            <div className={commentHeaderCell}>고객</div>
+            <div className={commentHeaderCell}>팀멤버</div>
+            <div className={commentHeaderCell}>담당자</div>
             <div className={commentHeaderCell}>PDF</div>
           </div>
         </div>
 
         {presentations.length === 0 ? (
           <p className="border-t border-zinc-200 px-4 py-10 text-center text-zinc-500">
-            등록된 학생이 없습니다.
+            등록된 고객이 없습니다.
           </p>
         ) : (
           presentations.map((p, i) => {
@@ -242,7 +256,7 @@ export function StudentEvaluationView({
                         href={`/presentations/${p.id}/prep`}
                         className={`${pillClass(true, true)} ${pillGreenActive}`}
                       >
-                        과제 등록하기
+                        {PARTICIPATION_REGISTER_LABEL}하기
                       </Link>
                     ) : registered ? (
                       <span className="line-clamp-2">{p.title}</span>
@@ -260,14 +274,14 @@ export function StudentEvaluationView({
                         rel="noreferrer"
                         className={`${pillClass(true, true)} ${pillVioletActive}`}
                       >
-                        발표자료
+                        {ATTACHMENT_LABEL}
                       </a>
                     ) : (
                       <span
                         className={`${pillClass(false, false)} ${pillVioletMuted}`}
-                        title="첨부된 발표 PDF가 없습니다."
+                        title="첨부된 PDF가 없습니다."
                       >
-                        발표자료
+                        {ATTACHMENT_LABEL}
                       </span>
                     )}
                   </div>
@@ -276,30 +290,30 @@ export function StudentEvaluationView({
                       <span
                         className={`${pillClass(false, false)} ${pillGreenMuted}`}
                       >
-                        평가 하기
+                        {RATE_ACTION_LABEL}
                       </span>
                     ) : !registered ? (
                       <span
                         className={`${pillClass(false, false)} ${pillGreenMuted}`}
-                        title="과제 등록 후 평가할 수 있습니다."
+                        title={`${PARTICIPATION_REGISTER_LABEL} 후 의견을 등록할 수 있습니다.`}
                       >
-                        평가 하기
+                        {RATE_ACTION_LABEL}
                       </span>
                     ) : hasEvaluated ? (
-                      <span className="text-xs text-zinc-500">평가 완료</span>
+                      <span className="text-xs text-zinc-500">{RATE_COMPLETE_LABEL}</span>
                     ) : registered ? (
                       <Link
                         href={`/presentations/${p.id}/evaluate`}
                         className={`${pillClass(true, true)} ${pillGreenActive}`}
                       >
-                        {hasDraft ? "이어서 평가" : "평가 하기"}
+                        {hasDraft ? CONTINUE_RATE_LABEL : RATE_ACTION_LABEL}
                       </Link>
                     ) : (
                       <span
                         className={`${pillClass(false, false)} ${pillGreenMuted}`}
-                        title="과제 등록 후 평가할 수 있습니다."
+                        title={`${PARTICIPATION_REGISTER_LABEL} 후 의견을 등록할 수 있습니다.`}
                       >
-                        평가 하기
+                        {RATE_ACTION_LABEL}
                       </span>
                     )}
                   </div>
@@ -349,7 +363,7 @@ export function StudentEvaluationView({
                       disabledTitle={
                         !isSelf
                           ? undefined
-                          : "평가 코멘트가 등록되면 다운로드할 수 있습니다."
+                          : "의견이 등록되면 다운로드할 수 있습니다."
                       }
                       className={`${pillClass(isSelf && pdfReady, isSelf && pdfReady)} ${
                         isSelf && pdfReady ? pillGreyActive : pillGreyMuted

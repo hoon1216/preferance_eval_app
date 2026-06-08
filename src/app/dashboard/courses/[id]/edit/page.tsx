@@ -1,6 +1,19 @@
 "use client";
 
 import { LinkActions } from "@/components/link-actions";
+import {
+  CUSTOMER_EVAL_LABEL,
+  MANAGER_EVAL_LABEL,
+  PARTICIPATION_LABEL,
+  PARTICIPATION_TITLE_LABEL,
+  SURVEY_DATETIME_LABEL,
+  SURVEY_EDIT_LABEL,
+  SURVEY_INFO_LABEL,
+  SURVEY_LABEL,
+  SURVEY_NAME_LABEL,
+  SURVEY_WEIGHT_LABEL,
+  TEAM_MEMBER_EVAL_LABEL,
+} from "@/lib/ui-labels";
 import { DEFAULT_INITIAL_PASSWORD, displayOrUnregistered } from "@/lib/default-password";
 import { canManageCourse } from "@/lib/permissions";
 import { parseJsonResponse } from "@/lib/parse-json-response";
@@ -51,7 +64,7 @@ function ParticipantTable({
               <>
                 <th className="px-4 py-3">학번</th>
                 <th className="px-4 py-3">이메일</th>
-                <th className="px-4 py-3">과제 제목</th>
+                <th className="px-4 py-3">{PARTICIPATION_TITLE_LABEL}</th>
               </>
             ) : (
               <>
@@ -153,7 +166,7 @@ export default function EvaluationEditPage() {
       setCourseJoinUrl(json.course.joinUrl ?? "");
     } else {
       const json = await parseJsonResponse<{ error?: string }>(courseRes);
-      setError(json?.error ?? "평가 정보를 불러오지 못했습니다.");
+      setError(json?.error ?? `${SURVEY_INFO_LABEL}를 불러오지 못했습니다.`);
     }
     if (studentsRes.ok) {
       const list = await studentsRes.json();
@@ -210,7 +223,7 @@ export default function EvaluationEditPage() {
     });
     const json = await parseJsonResponse<{ error?: string }>(res);
     if (!res.ok) {
-      setError(json?.error ?? "학생 등록 실패");
+      setError(json?.error ?? "고객 등록 실패");
       return;
     }
     setStudentName("");
@@ -227,7 +240,7 @@ export default function EvaluationEditPage() {
     });
     const json = await parseJsonResponse<{ error?: string }>(res);
     if (!res.ok) {
-      setError(json?.error ?? "참관교수 등록 실패");
+      setError(json?.error ?? "팀멤버 등록 실패");
       return;
     }
     setObserverName("");
@@ -235,7 +248,7 @@ export default function EvaluationEditPage() {
   }
 
   async function deleteObserver(observerId: string) {
-    if (!window.confirm("이 참관교수를 목록에서 삭제할까요?")) {
+    if (!window.confirm("이 팀멤버를 목록에서 삭제할까요?")) {
       return;
     }
     setError("");
@@ -251,7 +264,7 @@ export default function EvaluationEditPage() {
   }
 
   async function deleteStudent(studentId: string) {
-    if (!window.confirm("이 학생을 목록에서 삭제할까요? 관련 과제·평가 기록도 함께 삭제됩니다.")) {
+    if (!window.confirm(`이 고객을 목록에서 삭제할까요? 관련 ${PARTICIPATION_LABEL}·의견 기록도 함께 삭제됩니다.`)) {
       return;
     }
     setError("");
@@ -268,7 +281,7 @@ export default function EvaluationEditPage() {
 
   async function saveAndReturn() {
     if (!editName.trim() || !editDateTime.trim() || weightSum === 0) {
-      setError("평가명, 평가 일시를 입력하고 평가 비중 합계는 0보다 커야 합니다.");
+      setError(`${SURVEY_NAME_LABEL}, ${SURVEY_DATETIME_LABEL}를 입력하고 ${SURVEY_WEIGHT_LABEL} 합계는 0보다 커야 합니다.`);
       return;
     }
 
@@ -321,7 +334,7 @@ export default function EvaluationEditPage() {
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">평가 내용 편집</h1>
+          <h1 className="text-2xl font-bold">{SURVEY_EDIT_LABEL}</h1>
           <p className="mt-1 text-zinc-600">{courseName}</p>
         </div>
         <button
@@ -335,24 +348,24 @@ export default function EvaluationEditPage() {
           }
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
-          {saving ? "저장 중..." : "평가 정보 저장"}
+          {saving ? "저장 중..." : `${SURVEY_INFO_LABEL} 저장`}
         </button>
       </div>
 
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
       <div className="mb-6 space-y-6 rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="font-semibold">평가 기본 정보</h2>
+        <h2 className="font-semibold">{SURVEY_LABEL} 기본 정보</h2>
         <div className="grid gap-3 md:grid-cols-2">
           <input
-            placeholder="평가명"
+            placeholder={SURVEY_NAME_LABEL}
             required
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           />
           <input
-            placeholder="평가 일시"
+            placeholder={SURVEY_DATETIME_LABEL}
             required
             value={editDateTime}
             onChange={(e) => setEditDateTime(e.target.value)}
@@ -361,7 +374,7 @@ export default function EvaluationEditPage() {
         </div>
         {courseJoinUrl && (
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-            <p className="text-sm font-semibold">접속 링크 (학생·참관교수 공통)</p>
+            <p className="text-sm font-semibold">접속 링크 (고객·팀멤버 공통)</p>
             <p className="mt-2 break-all font-mono text-xs text-zinc-700">{courseJoinUrl}</p>
             <div className="mt-3">
               <LinkActions url={courseJoinUrl} label={editName || courseName} />
@@ -369,10 +382,10 @@ export default function EvaluationEditPage() {
           </div>
         )}
         <div>
-          <h3 className="text-sm font-semibold">평가 비중 조정 (%)</h3>
+          <h3 className="text-sm font-semibold">{SURVEY_WEIGHT_LABEL} 조정 (%)</h3>
           <div className="mt-3 grid gap-4 md:grid-cols-3">
             <label className="text-sm">
-              학생 평가(동료) 평균
+              {CUSTOMER_EVAL_LABEL}(동료) 평균
               <input
                 type="number"
                 min={0}
@@ -383,7 +396,7 @@ export default function EvaluationEditPage() {
               />
             </label>
             <label className="text-sm">
-              참관 교수 평가
+              {TEAM_MEMBER_EVAL_LABEL}
               <input
                 type="number"
                 min={0}
@@ -394,7 +407,7 @@ export default function EvaluationEditPage() {
               />
             </label>
             <label className="text-sm">
-              담당 교수 평가
+              {MANAGER_EVAL_LABEL}
               <input
                 type="number"
                 min={0}
@@ -411,16 +424,16 @@ export default function EvaluationEditPage() {
 
       <div className="mb-6 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         초기 비밀번호는 <strong>{DEFAULT_INITIAL_PASSWORD}</strong> 입니다. 공통 접속 링크에서
-        등록된 이름을 입력한 뒤 학생은 학번·이메일, 참관교수는 학과·이메일을 등록하고 비밀번호를
+        등록된 이름을 입력한 뒤 고객은 학번·이메일, 팀멤버는 학과·이메일을 등록하고 비밀번호를
         개별 변경할 수 있습니다.
       </div>
 
       <div className="mb-8 space-y-4">
         <form onSubmit={addStudent} className="flex flex-wrap items-end gap-2">
           <div className="flex-1 min-w-[200px]">
-            <label className="text-sm font-medium">학생 추가 (이름만)</label>
+            <label className="text-sm font-medium">고객 추가 (이름만)</label>
             <input
-              placeholder="학생 이름"
+              placeholder="고객 이름"
               required
               value={studentName}
               onChange={(e) => setStudentName(e.target.value)}
@@ -431,11 +444,11 @@ export default function EvaluationEditPage() {
             type="submit"
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800"
           >
-            학생 추가
+            고객 추가
           </button>
         </form>
         <ParticipantTable
-          title="학생 목록"
+          title="고객 목록"
           rows={students}
           variant="student"
           showDelete
@@ -446,9 +459,9 @@ export default function EvaluationEditPage() {
       <div className="space-y-4">
         <form onSubmit={addObserver} className="flex flex-wrap items-end gap-2">
           <div className="flex-1 min-w-[200px]">
-            <label className="text-sm font-medium">참관교수 추가 (이름만)</label>
+            <label className="text-sm font-medium">팀멤버 추가 (이름만)</label>
             <input
-              placeholder="참관교수 이름"
+              placeholder="팀멤버 이름"
               required
               value={observerName}
               onChange={(e) => setObserverName(e.target.value)}
@@ -459,11 +472,11 @@ export default function EvaluationEditPage() {
             type="submit"
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
           >
-            참관교수 추가
+            팀멤버 추가
           </button>
         </form>
         <ParticipantTable
-          title="참관교수 목록"
+          title="팀멤버 목록"
           rows={observers}
           variant="observer"
           showDelete

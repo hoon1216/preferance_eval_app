@@ -1,5 +1,5 @@
 export const COMPLETENESS_LABEL = "완성도";
-export const COMMENT_LABEL = "평가 의견";
+export const COMMENT_LABEL = "의견";
 
 export const SCORE_MIN = 1;
 export const SCORE_MAX = 10;

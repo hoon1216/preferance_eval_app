@@ -1,6 +1,14 @@
 "use client";
 
 import { isPdfFile } from "@/lib/pdf-upload-limits";
+import {
+  ATTACHMENT_LABEL,
+  PARTICIPATION_EDIT_LABEL,
+  PARTICIPATION_OVERVIEW_LABEL,
+  PARTICIPATION_REGISTER_LABEL,
+  PARTICIPATION_SUBMIT_LABEL,
+  PARTICIPATION_TITLE_LABEL,
+} from "@/lib/ui-labels";
 import { upload } from "@vercel/blob/client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -61,7 +69,7 @@ export default function PrepPage() {
   function validatePdfFile(file: File | null) {
     if (!file || !uploadConfig) return null;
     if (!isPdfFile(file)) {
-      return "발표 PDF는 PDF 파일만 첨부할 수 있습니다.";
+      return "첨부 PDF는 PDF 파일만 업로드할 수 있습니다.";
     }
     if (file.size > uploadConfig.maxPdfBytes) {
       return `PDF 파일은 ${uploadConfig.maxPdfMb}MB 이하만 업로드할 수 있습니다.`;
@@ -215,11 +223,11 @@ export default function PrepPage() {
         ← 이전 화면
       </button>
       <h1 className="mt-4 text-2xl font-bold">
-        {isEdit ? "등록 과제 편집" : "발표 개요 제출"}
+        {isEdit ? PARTICIPATION_EDIT_LABEL : PARTICIPATION_SUBMIT_LABEL}
       </h1>
       <p className="mt-2 text-zinc-600">
-        제목과 개요는 필수입니다. 발표 PDF는 선택 사항이며, 없어도 과제 등록이
-        완료됩니다.
+        {PARTICIPATION_TITLE_LABEL}과 {PARTICIPATION_OVERVIEW_LABEL}는 필수입니다. 첨부 PDF는
+        선택 사항이며, 없어도 {PARTICIPATION_REGISTER_LABEL}이 완료됩니다.
       </p>
       {uploadConfig?.hint && (
         <p className="mt-1 text-xs text-zinc-500">{uploadConfig.hint}</p>
@@ -230,7 +238,7 @@ export default function PrepPage() {
         className="mt-8 space-y-5 rounded-xl border border-zinc-200 bg-white p-6"
       >
         <div>
-          <label className="block text-sm font-medium">발표 제목</label>
+          <label className="block text-sm font-medium">{PARTICIPATION_TITLE_LABEL}</label>
           <input
             required
             value={title}
@@ -240,7 +248,7 @@ export default function PrepPage() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium">발표 개요</label>
+          <label className="block text-sm font-medium">{PARTICIPATION_OVERVIEW_LABEL}</label>
           <textarea
             required
             rows={8}
@@ -252,7 +260,7 @@ export default function PrepPage() {
         </div>
         <div>
           <label className="block text-sm font-medium">
-            발표 PDF 첨부{" "}
+            {ATTACHMENT_LABEL} PDF{" "}
             <span className="font-normal text-zinc-500">(선택)</span>
           </label>
           {showExistingPdf && (
@@ -314,8 +322,8 @@ export default function PrepPage() {
               ? `PDF 업로드 중 (${uploadProgress}%)`
               : "저장 중..."
             : isEdit
-              ? "과제 저장"
-              : "과제 등록"}
+              ? "저장"
+              : PARTICIPATION_REGISTER_LABEL}
         </button>
       </form>
     </div>
