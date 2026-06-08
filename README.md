@@ -44,13 +44,9 @@ npm run dev
 | `BLOB_STORE_ID` | Vercel Blob (PDF 업로드) |
 | `BLOB_READ_WRITE_TOKEN` | 4MB 초과 PDF 업로드 시 필요 |
 
-## 원본 프로젝트
 
-- 원본: `peer-eval-app` (대학 발표 피어 평가)
-- 이 프로젝트: `preferance_eval_app` (고객 선호도 평가용 파생)
 
 ## 다음 개발 방향 (예시)
 
-- 용어 변경: 강의 → 평가 세션, 학생 → 패널/고객 등
 - 선호도 전용 평가 항목·척도
 - 제품/서비스 비교 평가 UI
