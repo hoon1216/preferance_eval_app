@@ -3,17 +3,16 @@
 import { LinkActions } from "@/components/link-actions";
 import {
   ADD_QUESTION_LABEL,
-  CUSTOMER_EVAL_LABEL,
-  MANAGER_EVAL_LABEL,
   QUESTION_CONTENT_LABEL,
   QUESTION_LIST_LABEL,
   QUESTION_TITLE_LABEL,
+  SURVEY_BASIC_EDIT_SECTION_LABEL,
+  SURVEY_CUSTOMER_MANAGE_SECTION_LABEL,
   SURVEY_DATETIME_LABEL,
   SURVEY_EDIT_LABEL,
   SURVEY_INFO_LABEL,
-  SURVEY_LABEL,
   SURVEY_NAME_LABEL,
-  SURVEY_WEIGHT_LABEL,
+  SURVEY_QUESTION_EDIT_SECTION_LABEL,
 } from "@/lib/ui-labels";
 import { displayOrUnregistered } from "@/lib/default-password";
 import { canManageCourse } from "@/lib/permissions";
@@ -30,12 +29,30 @@ type QuestionRow = {
   orderIndex: number;
 };
 
-type ObserverRow = {
+type CustomerRow = {
   id: string;
   name: string;
-  department: string | null;
   email: string | null;
 };
+
+function SectionCard({
+  title,
+  children,
+  className = "",
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={`rounded-xl border border-zinc-200 bg-white p-5 ${className}`}
+    >
+      <h2 className="mb-4 text-lg font-semibold text-zinc-900">{title}</h2>
+      {children}
+    </section>
+  );
+}
 
 function QuestionTable({
   rows,
@@ -61,10 +78,7 @@ function QuestionTable({
   onDelete: (id: string) => void;
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
-      <h2 className="border-b border-zinc-200 px-4 py-3 font-semibold">
-        {QUESTION_LIST_LABEL}
-      </h2>
+    <div className="overflow-x-auto rounded-lg border border-zinc-200">
       <table className="min-w-full text-sm">
         <thead className="border-b border-zinc-200 bg-zinc-50 text-left">
           <tr>
@@ -170,12 +184,11 @@ function CustomerTable({
   rows,
   onDelete,
 }: {
-  rows: ObserverRow[];
+  rows: CustomerRow[];
   onDelete: (id: string) => void;
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
-      <h2 className="border-b border-zinc-200 px-4 py-3 font-semibold">고객 목록</h2>
+    <div className="overflow-x-auto rounded-lg border border-zinc-200">
       <table className="min-w-full text-sm">
         <thead className="border-b border-zinc-200 bg-zinc-50 text-left">
           <tr>
@@ -189,7 +202,7 @@ function CustomerTable({
           {rows.length === 0 ? (
             <tr>
               <td colSpan={4} className="px-4 py-8 text-center text-zinc-500">
-                등록된 고객이 없습니다.
+                등록된 참여 고객이 없습니다.
               </td>
             </tr>
           ) : (
@@ -226,23 +239,20 @@ export default function EvaluationEditPage() {
   const [courseName, setCourseName] = useState("");
   const [courseJoinUrl, setCourseJoinUrl] = useState("");
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
-  const [observers, setObservers] = useState<ObserverRow[]>([]);
+  const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [questionTitle, setQuestionTitle] = useState("");
   const [questionOverview, setQuestionOverview] = useState("");
-  const [observerName, setObserverName] = useState("");
+  const [customerName, setCustomerName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editOverview, setEditOverview] = useState("");
   const [editName, setEditName] = useState("");
   const [editDateTime, setEditDateTime] = useState("");
-  const [weightPeer, setWeightPeer] = useState(50);
-  const [weightObserver, setWeightObserver] = useState(25);
-  const [weightLead, setWeightLead] = useState(25);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const [courseRes, questionsRes, observersRes] = await Promise.all([
+    const [courseRes, questionsRes, customersRes] = await Promise.all([
       fetch(`/api/courses/${courseId}`),
       fetch(`/api/courses/${courseId}/questions`),
       fetch(`/api/courses/${courseId}/observers`),
@@ -253,9 +263,6 @@ export default function EvaluationEditPage() {
       setCourseName(json.course.name ?? "");
       setEditName(json.course.name ?? "");
       setEditDateTime(json.course.semester ?? "");
-      setWeightPeer(Math.round(json.course.weightPeer ?? 50));
-      setWeightObserver(Math.round(json.course.weightObserver ?? 25));
-      setWeightLead(Math.round(json.course.weightLead ?? 25));
       setCourseJoinUrl(json.course.joinUrl ?? "");
     } else {
       const json = await parseJsonResponse<{ error?: string }>(courseRes);
@@ -272,13 +279,12 @@ export default function EvaluationEditPage() {
         }))
       );
     }
-    if (observersRes.ok) {
-      const list = await observersRes.json();
-      setObservers(
-        list.map((o: ObserverRow) => ({
+    if (customersRes.ok) {
+      const list = await customersRes.json();
+      setCustomers(
+        list.map((o: { id: string; name: string; email: string | null }) => ({
           id: o.id,
           name: o.name,
-          department: o.department,
           email: o.email,
         }))
       );
@@ -358,29 +364,29 @@ export default function EvaluationEditPage() {
     load();
   }
 
-  async function addObserver(e: React.FormEvent) {
+  async function addCustomer(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     const res = await fetch(`/api/courses/${courseId}/observers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: observerName }),
+      body: JSON.stringify({ name: customerName }),
     });
     const json = await parseJsonResponse<{ error?: string }>(res);
     if (!res.ok) {
       setError(json?.error ?? "고객 등록 실패");
       return;
     }
-    setObserverName("");
+    setCustomerName("");
     load();
   }
 
-  async function deleteObserver(observerId: string) {
-    if (!window.confirm("이 고객을 목록에서 삭제할까요?")) {
+  async function deleteCustomer(customerId: string) {
+    if (!window.confirm("이 참여 고객을 목록에서 삭제할까요?")) {
       return;
     }
     setError("");
-    const res = await fetch(`/api/courses/${courseId}/observers/${observerId}`, {
+    const res = await fetch(`/api/courses/${courseId}/observers/${customerId}`, {
       method: "DELETE",
     });
     const json = await parseJsonResponse<{ error?: string }>(res);
@@ -392,10 +398,8 @@ export default function EvaluationEditPage() {
   }
 
   async function saveAndReturn() {
-    if (!editName.trim() || !editDateTime.trim() || weightSum === 0) {
-      setError(
-        `${SURVEY_NAME_LABEL}, ${SURVEY_DATETIME_LABEL}를 입력하고 ${SURVEY_WEIGHT_LABEL} 합계는 0보다 커야 합니다.`
-      );
+    if (!editName.trim() || !editDateTime.trim()) {
+      setError(`${SURVEY_NAME_LABEL}과 ${SURVEY_DATETIME_LABEL}를 입력해주세요.`);
       return;
     }
 
@@ -407,9 +411,6 @@ export default function EvaluationEditPage() {
       body: JSON.stringify({
         name: editName.trim(),
         semester: editDateTime.trim(),
-        weightPeer,
-        weightObserver,
-        weightLead,
       }),
     });
     const json = await parseJsonResponse<{ error?: string }>(res);
@@ -421,8 +422,6 @@ export default function EvaluationEditPage() {
     router.push(`/dashboard/courses/${courseId}`);
     router.refresh();
   }
-
-  const weightSum = weightPeer + weightObserver + weightLead;
 
   if (!courseName && !editName) {
     return (
@@ -454,9 +453,7 @@ export default function EvaluationEditPage() {
         <button
           type="button"
           onClick={saveAndReturn}
-          disabled={
-            saving || weightSum === 0 || !editName.trim() || !editDateTime.trim()
-          }
+          disabled={saving || !editName.trim() || !editDateTime.trim()}
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {saving ? "저장 중..." : `${SURVEY_INFO_LABEL} 저장`}
@@ -465,148 +462,120 @@ export default function EvaluationEditPage() {
 
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
-      <div className="mb-6 space-y-6 rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="font-semibold">{SURVEY_LABEL} 기본 정보</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          <input
-            placeholder={SURVEY_NAME_LABEL}
-            required
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          />
-          <input
-            placeholder={SURVEY_DATETIME_LABEL}
-            required
-            value={editDateTime}
-            onChange={(e) => setEditDateTime(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          />
-        </div>
-        {courseJoinUrl && (
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-            <p className="text-sm font-semibold">접속 링크 (고객 공통)</p>
-            <p className="mt-2 break-all font-mono text-xs text-zinc-700">{courseJoinUrl}</p>
-            <div className="mt-3">
-              <LinkActions url={courseJoinUrl} label={editName || courseName} />
+      <div className="space-y-8">
+        <SectionCard title={SURVEY_BASIC_EDIT_SECTION_LABEL}>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div>
+              <label className="text-sm font-medium">{SURVEY_NAME_LABEL}</label>
+              <input
+                placeholder={SURVEY_NAME_LABEL}
+                required
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">{SURVEY_DATETIME_LABEL}</label>
+              <input
+                placeholder={SURVEY_DATETIME_LABEL}
+                required
+                value={editDateTime}
+                onChange={(e) => setEditDateTime(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
             </div>
           </div>
-        )}
-        <div>
-          <h3 className="text-sm font-semibold">{SURVEY_WEIGHT_LABEL} 조정 (%)</h3>
-          <div className="mt-3 grid gap-4 md:grid-cols-3">
-            <label className="text-sm">
-              {CUSTOMER_EVAL_LABEL}
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={weightPeer}
-                onChange={(e) => setWeightPeer(Number(e.target.value))}
-                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
-              />
-            </label>
-            <label className="text-sm">
-              보조 가중치
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={weightObserver}
-                onChange={(e) => setWeightObserver(Number(e.target.value))}
-                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
-              />
-            </label>
-            <label className="text-sm">
-              {MANAGER_EVAL_LABEL}
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={weightLead}
-                onChange={(e) => setWeightLead(Number(e.target.value))}
-                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2"
-              />
-            </label>
-          </div>
-          <p className="mt-2 text-xs text-zinc-500">입력 합계: {weightSum}% (저장 시 100%로 정규화)</p>
-        </div>
-      </div>
+          {courseJoinUrl && (
+            <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+              <p className="text-sm font-semibold">접속 링크</p>
+              <p className="mt-2 break-all font-mono text-xs text-zinc-700">
+                {courseJoinUrl}
+              </p>
+              <div className="mt-3">
+                <LinkActions url={courseJoinUrl} label={editName || courseName} />
+              </div>
+            </div>
+          )}
+        </SectionCard>
 
-      <div className="mb-6 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        <strong>{ADD_QUESTION_LABEL}</strong>로 조사 질문을 등록·편집합니다. 평가 고객은{" "}
-        <Link href="/login/customer" className="underline">
-          고객 접속 화면
-        </Link>
-        에서 이름만 입력해 접속합니다.
-      </div>
-
-      <div className="mb-8 space-y-4">
-        <form
-          onSubmit={addQuestion}
-          className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4"
-        >
-          <p className="text-sm font-medium">{ADD_QUESTION_LABEL}</p>
-          <input
-            placeholder={QUESTION_TITLE_LABEL}
-            required
-            value={questionTitle}
-            onChange={(e) => setQuestionTitle(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          />
-          <textarea
-            placeholder={QUESTION_CONTENT_LABEL}
-            required
-            rows={3}
-            value={questionOverview}
-            onChange={(e) => setQuestionOverview(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800"
+        <SectionCard title={SURVEY_CUSTOMER_MANAGE_SECTION_LABEL}>
+          <p className="mb-4 text-sm text-zinc-600">
+            참여 고객은{" "}
+            <Link href="/login/customer" className="text-emerald-700 hover:underline">
+              고객 접속 화면
+            </Link>
+            에서 등록된 이름만 입력해 접속합니다.
+          </p>
+          <form
+            onSubmit={addCustomer}
+            className="mb-4 flex flex-wrap items-end gap-2"
           >
-            {ADD_QUESTION_LABEL}
-          </button>
-        </form>
-        <QuestionTable
-          rows={questions}
-          editingId={editingId}
-          editTitle={editTitle}
-          editOverview={editOverview}
-          onEditStart={(row) => {
-            setEditingId(row.id);
-            setEditTitle(row.title);
-            setEditOverview(row.overview);
-          }}
-          onEditCancel={() => setEditingId(null)}
-          onEditTitleChange={setEditTitle}
-          onEditOverviewChange={setEditOverview}
-          onEditSave={saveQuestionEdit}
-          onDelete={deleteQuestion}
-        />
-      </div>
+            <div className="min-w-[200px] flex-1">
+              <label className="text-sm font-medium">고객 추가 (이름만)</label>
+              <input
+                placeholder="참여 고객 이름"
+                required
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <button
+              type="submit"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+            >
+              고객 추가
+            </button>
+          </form>
+          <CustomerTable rows={customers} onDelete={deleteCustomer} />
+        </SectionCard>
 
-      <div className="space-y-4">
-        <form onSubmit={addObserver} className="flex flex-wrap items-end gap-2">
-          <div className="min-w-[200px] flex-1">
-            <label className="text-sm font-medium">고객 추가 (이름만)</label>
+        <SectionCard title={SURVEY_QUESTION_EDIT_SECTION_LABEL}>
+          <form
+            onSubmit={addQuestion}
+            className="mb-4 space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4"
+          >
+            <p className="text-sm font-medium">{ADD_QUESTION_LABEL}</p>
             <input
-              placeholder="평가 고객 이름"
+              placeholder={QUESTION_TITLE_LABEL}
               required
-              value={observerName}
-              onChange={(e) => setObserverName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              value={questionTitle}
+              onChange={(e) => setQuestionTitle(e.target.value)}
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             />
-          </div>
-          <button
-            type="submit"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-          >
-            고객 추가
-          </button>
-        </form>
-        <CustomerTable rows={observers} onDelete={deleteObserver} />
+            <textarea
+              placeholder={QUESTION_CONTENT_LABEL}
+              required
+              rows={3}
+              value={questionOverview}
+              onChange={(e) => setQuestionOverview(e.target.value)}
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+            <button
+              type="submit"
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800"
+            >
+              {ADD_QUESTION_LABEL}
+            </button>
+          </form>
+          <QuestionTable
+            rows={questions}
+            editingId={editingId}
+            editTitle={editTitle}
+            editOverview={editOverview}
+            onEditStart={(row) => {
+              setEditingId(row.id);
+              setEditTitle(row.title);
+              setEditOverview(row.overview);
+            }}
+            onEditCancel={() => setEditingId(null)}
+            onEditTitleChange={setEditTitle}
+            onEditOverviewChange={setEditOverview}
+            onEditSave={saveQuestionEdit}
+            onDelete={deleteQuestion}
+          />
+        </SectionCard>
       </div>
     </div>
   );

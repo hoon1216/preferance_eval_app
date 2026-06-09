@@ -191,8 +191,7 @@ export default function JoinPage() {
             {info.courseName} · {info.courseSemester}
           </p>
           <p className="mt-2 text-sm text-zinc-500">
-            고객은 등록된 이름만 입력하면 바로 접속됩니다. 팀멤버는 이름 확인 후
-            이메일·비밀번호를 설정합니다.
+            등록된 이름만 입력하면 바로 접속할 수 있습니다.
           </p>
           <form onSubmit={lookupName} className="mt-8 space-y-4">
             <div>
