@@ -7,21 +7,9 @@ import {
 import { listObserverCoursesForUser } from "@/lib/observer-courses";
 import { canManageCourse } from "@/lib/permissions";
 import { pillButtonPrimaryClass } from "@/lib/pill-button";
-import { surveyQuestionFilter } from "@/lib/survey-questions";
 import { ADD_SURVEY_LABEL, SURVEY_LIST_LABEL } from "@/lib/ui-labels";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-
-async function countQuestions(courseId: string) {
-  const { prisma } = await import("@/lib/prisma");
-  const surveyCount = await prisma.surveyItem.count({
-    where: { section: { courseId } },
-  });
-  if (surveyCount > 0) return surveyCount;
-  return prisma.presentation.count({
-    where: { courseId, ...surveyQuestionFilter },
-  });
-}
 
 async function getCourses(userId: string, role: string) {
   const { prisma } = await import("@/lib/prisma");
@@ -36,14 +24,10 @@ async function getCourses(userId: string, role: string) {
     });
     return Promise.all(
       courses.map(async (course) => {
-        const [access, questionCount] = await Promise.all([
-          ensureCourseAccessToken(course.id),
-          countQuestions(course.id),
-        ]);
+        const access = await ensureCourseAccessToken(course.id);
         return {
           ...course,
           joinUrl: access?.joinUrl ?? null,
-          questionCount,
           customerCount: course._count.observers,
         };
       })
@@ -57,13 +41,10 @@ async function getCourses(userId: string, role: string) {
     });
     if (!user) return [];
     const courses = await listObserverCoursesForUser(userId, user.name);
-    return Promise.all(
-      courses.map(async (course) => ({
-        ...course,
-        questionCount: await countQuestions(course.id),
-        customerCount: course._count?.observers ?? 0,
-      }))
-    );
+    return courses.map((course) => ({
+      ...course,
+      customerCount: course._count?.observers ?? 0,
+    }));
   }
 
   return [];
@@ -116,7 +97,6 @@ export default async function DashboardPage() {
                   courseId={course.id}
                   name={course.name}
                   semester={course.semester}
-                  questionCount={course.questionCount}
                   customerCount={course.customerCount}
                   joinUrl={joinUrl}
                 />
@@ -134,7 +114,6 @@ export default async function DashboardPage() {
                 courseId={course.id}
                 name={course.name}
                 semester={course.semester}
-                questionCount={course.questionCount}
                 customerCount={course.customerCount}
                 subtitle={subtitle}
               />

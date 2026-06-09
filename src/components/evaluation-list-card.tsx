@@ -1,8 +1,8 @@
 import { DeleteEvaluationButton } from "@/components/delete-evaluation-button";
 import { LinkActions } from "@/components/link-actions";
+import { pillButtonClass } from "@/lib/pill-button";
 import {
   CUSTOMER_COUNT_LABEL,
-  QUESTION_COUNT_LABEL,
   SURVEY_DATETIME_LABEL,
   SURVEY_NAME_LABEL,
 } from "@/lib/ui-labels";
@@ -12,23 +12,11 @@ function CardDivider() {
   return <div className="mx-5 border-t border-zinc-200" aria-hidden />;
 }
 
-function CourseSurveyStats({
-  questionCount,
-  customerCount,
-}: {
-  questionCount: number;
-  customerCount: number;
-}) {
+function CourseCustomerStat({ customerCount }: { customerCount: number }) {
   return (
-    <div className="flex shrink-0 items-center gap-8 text-zinc-900">
-      <div className="text-center">
-        <p className="text-xs leading-tight text-zinc-500">{QUESTION_COUNT_LABEL}</p>
-        <p className="mt-0.5 text-base font-bold leading-tight">{questionCount}개</p>
-      </div>
-      <div className="text-center">
-        <p className="text-xs leading-tight text-zinc-500">{CUSTOMER_COUNT_LABEL}</p>
-        <p className="mt-0.5 text-base font-bold leading-tight">{customerCount}명</p>
-      </div>
+    <div className="shrink-0 text-center text-zinc-900">
+      <p className="text-xs leading-tight text-zinc-500">{CUSTOMER_COUNT_LABEL}</p>
+      <p className="mt-0.5 text-base font-bold leading-tight">{customerCount}명</p>
     </div>
   );
 }
@@ -37,7 +25,6 @@ type ProfessorCardProps = {
   courseId: string;
   name: string;
   semester: string;
-  questionCount: number;
   customerCount: number;
   joinUrl: string | null;
 };
@@ -46,7 +33,6 @@ export function ProfessorEvaluationListCard({
   courseId,
   name,
   semester,
-  questionCount,
   customerCount,
   joinUrl,
 }: ProfessorCardProps) {
@@ -60,11 +46,14 @@ export function ProfessorEvaluationListCard({
           <p className="text-xs text-zinc-500">{SURVEY_NAME_LABEL}</p>
           <h2 className="mt-0.5 text-xl font-bold text-zinc-900">{name}</h2>
         </Link>
-        <div className="flex shrink-0 items-center gap-5">
-          <CourseSurveyStats
-            questionCount={questionCount}
-            customerCount={customerCount}
-          />
+        <div className="flex shrink-0 items-center gap-3">
+          <CourseCustomerStat customerCount={customerCount} />
+          <Link
+            href={`/dashboard/courses/${courseId}/edit`}
+            className={`${pillButtonClass} shrink-0`}
+          >
+            수정
+          </Link>
           <DeleteEvaluationButton
             courseId={courseId}
             evaluationName={name}
@@ -95,7 +84,6 @@ type ReadonlyCardProps = {
   courseId: string;
   name: string;
   semester: string;
-  questionCount?: number;
   customerCount?: number;
   subtitle?: string;
 };
@@ -104,7 +92,6 @@ export function ReadonlyEvaluationListCard({
   courseId,
   name,
   semester,
-  questionCount,
   customerCount,
   subtitle,
 }: ReadonlyCardProps) {
@@ -121,11 +108,8 @@ export function ReadonlyEvaluationListCard({
             <p className="mt-1 text-xs text-zinc-500">{subtitle}</p>
           )}
         </div>
-        {questionCount !== undefined && (
-          <CourseSurveyStats
-            questionCount={questionCount}
-            customerCount={customerCount ?? 0}
-          />
+        {customerCount !== undefined && (
+          <CourseCustomerStat customerCount={customerCount} />
         )}
       </div>
       <CardDivider />

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  SURVEY_BASIC_EDIT_SECTION_LABEL,
   SURVEY_CUSTOMER_MANAGE_SECTION_LABEL,
   SURVEY_QUESTION_EDIT_SECTION_LABEL,
 } from "@/lib/ui-labels";
@@ -12,10 +11,6 @@ import { usePathname } from "next/navigation";
 const navItems = (
   courseId: string
 ): Array<{ href: string; label: string }> => [
-  {
-    href: `/dashboard/courses/${courseId}/edit`,
-    label: SURVEY_BASIC_EDIT_SECTION_LABEL,
-  },
   {
     href: `/dashboard/courses/${courseId}/customers`,
     label: SURVEY_CUSTOMER_MANAGE_SECTION_LABEL,
