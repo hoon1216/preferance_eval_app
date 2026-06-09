@@ -5,7 +5,7 @@ import {
   type CustomerDemographic,
 } from "@/lib/customer-demographics";
 
-function DemographicList({
+function DemographicColumn({
   title,
   counts,
 }: {
@@ -15,15 +15,16 @@ function DemographicList({
   const entries = sortedDemographicEntries(counts);
 
   return (
-    <div>
+    <div className="min-w-[72px]">
       <p className="text-sm font-medium text-zinc-700">{title}</p>
       {entries.length === 0 ? (
-        <p className="mt-1 text-sm text-zinc-500">—</p>
+        <p className="mt-2 text-sm text-zinc-500">—</p>
       ) : (
         <ul className="mt-2 space-y-1">
           {entries.map(([label, count]) => (
             <li key={label} className="text-sm text-zinc-600">
-              {label} <span className="font-medium text-zinc-900">{count}명</span>
+              {label}{" "}
+              <span className="font-medium text-zinc-900">{count}명</span>
             </li>
           ))}
         </ul>
@@ -42,14 +43,15 @@ export function CustomerDemographicsSummary({
   }
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-zinc-600">
-        총 <span className="font-semibold text-zinc-900">{customers.length}명</span>
-      </p>
-      <div className="grid gap-6 sm:grid-cols-2">
-        <DemographicList title="성별" counts={countByGender(customers)} />
-        <DemographicList title="연령대" counts={countByAgeGroup(customers)} />
+    <div className="flex flex-wrap items-start gap-8">
+      <div className="min-w-[72px]">
+        <p className="text-sm font-medium text-zinc-700">총인원</p>
+        <p className="mt-2 text-sm text-zinc-600">
+          <span className="font-semibold text-zinc-900">{customers.length}명</span>
+        </p>
       </div>
+      <DemographicColumn title="성별" counts={countByGender(customers)} />
+      <DemographicColumn title="연령대" counts={countByAgeGroup(customers)} />
     </div>
   );
 }
