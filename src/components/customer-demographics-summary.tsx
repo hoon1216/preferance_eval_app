@@ -15,19 +15,20 @@ function DemographicColumn({
   const entries = sortedDemographicEntries(counts);
 
   return (
-    <div className="min-w-[72px]">
+    <div>
       <p className="text-sm font-medium text-zinc-700">{title}</p>
       {entries.length === 0 ? (
         <p className="mt-2 text-sm text-zinc-500">—</p>
       ) : (
-        <ul className="mt-2 space-y-1">
-          {entries.map(([label, count]) => (
-            <li key={label} className="text-sm text-zinc-600">
+        <p className="mt-2 text-sm text-zinc-600">
+          {entries.map(([label, count], index) => (
+            <span key={label}>
+              {index > 0 && <span className="text-zinc-300"> / </span>}
               {label}{" "}
               <span className="font-medium text-zinc-900">{count}명</span>
-            </li>
+            </span>
           ))}
-        </ul>
+        </p>
       )}
     </div>
   );
@@ -44,7 +45,7 @@ export function CustomerDemographicsSummary({
 
   return (
     <div className="flex flex-wrap items-start gap-8">
-      <div className="min-w-[72px]">
+      <div>
         <p className="text-sm font-medium text-zinc-700">총인원</p>
         <p className="mt-2 text-sm text-zinc-600">
           <span className="font-semibold text-zinc-900">{customers.length}명</span>
