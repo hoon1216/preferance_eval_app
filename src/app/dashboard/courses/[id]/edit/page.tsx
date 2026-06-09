@@ -6,6 +6,7 @@ import {
   SURVEY_BASIC_EDIT_SECTION_LABEL,
   SURVEY_DATETIME_LABEL,
   SURVEY_INFO_LABEL,
+  SURVEY_LIST_LABEL,
   SURVEY_NAME_LABEL,
 } from "@/lib/ui-labels";
 import { parseJsonResponse } from "@/lib/parse-json-response";
@@ -82,6 +83,8 @@ export default function CourseBasicEditPage() {
       courseId={courseId}
       title={SURVEY_BASIC_EDIT_SECTION_LABEL}
       courseName={courseName}
+      backHref="/dashboard"
+      backLabel={SURVEY_LIST_LABEL}
       action={
         <button
           type="button"

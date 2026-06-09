@@ -167,11 +167,9 @@ export function ProfessorEvaluationView({
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <CourseDashboardHeader
-        courseId={courseId}
         name={course.name}
         semester={course.semester}
         subtitle={subtitle}
-        showManageNav={showEditButton}
       />
 
       <div className="mb-4 flex flex-wrap justify-end gap-2">

@@ -2,6 +2,10 @@
 export const pillButtonClass =
   "rounded-full border-2 border-zinc-800 bg-white px-5 py-1.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-50";
 
+/** 대시보드 섹션 편집 버튼 (pillButtonClass 대비 약 20% 축소) */
+export const pillButtonSmClass =
+  "rounded-full border-2 border-zinc-800 bg-white px-4 py-1 text-xs font-semibold text-zinc-900 hover:bg-zinc-50";
+
 /** 평가 추가 등 주요 액션 (pill 형태 + 블루) */
 export const pillButtonPrimaryClass =
   "rounded-full border-2 border-blue-600 bg-blue-600 px-5 py-1.5 text-sm font-semibold text-white hover:border-blue-700 hover:bg-blue-700";

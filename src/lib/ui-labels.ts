@@ -19,6 +19,7 @@ export const SURVEY_EDIT_LABEL = "조사 내용 편집";
 export const SURVEY_BASIC_EDIT_SECTION_LABEL = "조사 기본 정보 수정";
 export const SURVEY_CUSTOMER_MANAGE_SECTION_LABEL = "조사 참여 고객 관리";
 export const SURVEY_QUESTION_EDIT_SECTION_LABEL = "조사 문항 편집";
+export const SURVEY_CONTENT_SECTION_LABEL = "조사 내용";
 export const SURVEY_INFO_LABEL = "조사 정보";
 export const SURVEY_WEIGHT_LABEL = "조사 비중";
 export const SURVEY_RESULT_LABEL = "조사 결과";
