@@ -74,7 +74,7 @@ function CustomerLoginForm() {
       <p className="mt-6 text-center text-sm text-zinc-500">
         담당자이신가요?{" "}
         <Link href="/login" className="text-blue-600 hover:underline">
-          관리자 로그인
+          담당자 로그인
         </Link>
       </p>
     </>

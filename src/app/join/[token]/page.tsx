@@ -307,8 +307,8 @@ export default function JoinPage() {
       ) : info && info.type === "OBSERVER" ? (
         <div className="mt-6">
           {error && <p className="text-sm text-red-600">{error}</p>}
-          <Link href="/login" className="mt-4 inline-block text-blue-600 hover:underline">
-            관리자 로그인
+          <Link href="/login/customer" className="mt-4 inline-block text-emerald-700 hover:underline">
+            고객 접속 화면
           </Link>
         </div>
       ) : null}
