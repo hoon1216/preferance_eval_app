@@ -75,6 +75,25 @@ export default function CourseCustomersPage() {
     load();
   }
 
+  async function updateCustomer(
+    customerId: string,
+    data: { name: string; gender: Gender; age: number }
+  ) {
+    setError("");
+    const res = await fetch(`/api/courses/${courseId}/observers/${customerId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const json = await parseJsonResponse<{ error?: string }>(res);
+    if (!res.ok) {
+      setError(json?.error ?? "수정 실패");
+      return false;
+    }
+    load();
+    return true;
+  }
+
   async function deleteCustomer(customerId: string) {
     if (!window.confirm("이 참여 고객을 목록에서 삭제할까요?")) return;
     setError("");
@@ -161,7 +180,11 @@ export default function CourseCustomersPage() {
             고객 추가
           </button>
         </form>
-        <CourseCustomerTable rows={customers} onDelete={deleteCustomer} />
+        <CourseCustomerTable
+          rows={customers}
+          onUpdate={updateCustomer}
+          onDelete={deleteCustomer}
+        />
       </section>
     </CourseEditLayout>
   );
