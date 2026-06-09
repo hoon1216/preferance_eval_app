@@ -1,7 +1,8 @@
 "use client";
 
+import { SurveyProfessorOverview } from "@/components/survey-professor-overview";
+import { SurveyRespondForm } from "@/components/survey-respond-form";
 import { ProfessorEvaluationView } from "@/components/professor-evaluation-view";
-import { StudentEvaluationView } from "@/components/student-evaluation-view";
 import { canViewCourseResults, isObserverProfessor } from "@/lib/permissions";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -55,23 +56,37 @@ export default function EvaluationResultsPage() {
   const { data: session } = useSession();
   const [data, setData] = useState<CourseData | null>(null);
   const [loadError, setLoadError] = useState("");
+  const [hasSurveyForm, setHasSurveyForm] = useState(false);
+  const [surveyChecked, setSurveyChecked] = useState(false);
 
   const load = useCallback(async () => {
     setLoadError("");
-    const res = await fetch(`/api/courses/${courseId}`);
-    if (res.ok) {
-      setData(await res.json());
-      return;
+    const [courseRes, formRes] = await Promise.all([
+      fetch(`/api/courses/${courseId}`),
+      fetch(`/api/courses/${courseId}/survey-form`),
+    ]);
+
+    if (courseRes.ok) {
+      setData(await courseRes.json());
+    } else {
+      const body = (await courseRes.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      setLoadError(body?.error ?? "조사 정보를 불러오지 못했습니다.");
     }
-    const body = (await res.json().catch(() => null)) as { error?: string } | null;
-    setLoadError(body?.error ?? "조사 정보를 불러오지 못했습니다.");
+
+    if (formRes.ok) {
+      const form = await formRes.json();
+      setHasSurveyForm((form.sections ?? []).length > 0);
+    }
+    setSurveyChecked(true);
   }, [courseId]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  if (!data) {
+  if (!surveyChecked || (!data && !loadError)) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-10">
         {loadError ? (
@@ -83,13 +98,19 @@ export default function EvaluationResultsPage() {
     );
   }
 
-  const { course, presentations } = data;
-  const role = data.viewerRole ?? session?.user?.role;
+  const role = data?.viewerRole ?? session?.user?.role;
+  const course = data?.course;
+
+  if (!course) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-10 text-red-600">
+        {loadError || "조사 정보를 불러오지 못했습니다."}
+      </div>
+    );
+  }
 
   if (isObserverProfessor(role ?? "")) {
-    return (
-      <StudentEvaluationView course={course} presentations={presentations} />
-    );
+    return <SurveyRespondForm course={course} />;
   }
 
   if (!canViewCourseResults(role ?? "")) {
@@ -99,6 +120,12 @@ export default function EvaluationResultsPage() {
       </div>
     );
   }
+
+  if (hasSurveyForm) {
+    return <SurveyProfessorOverview course={course} />;
+  }
+
+  const presentations = data?.presentations ?? [];
 
   return (
     <ProfessorEvaluationView

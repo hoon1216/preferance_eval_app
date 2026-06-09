@@ -14,6 +14,10 @@ import { redirect } from "next/navigation";
 
 async function countQuestions(courseId: string) {
   const { prisma } = await import("@/lib/prisma");
+  const surveyCount = await prisma.surveyItem.count({
+    where: { section: { courseId } },
+  });
+  if (surveyCount > 0) return surveyCount;
   return prisma.presentation.count({
     where: { courseId, ...surveyQuestionFilter },
   });

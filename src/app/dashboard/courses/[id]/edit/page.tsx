@@ -1,11 +1,8 @@
 "use client";
 
 import { LinkActions } from "@/components/link-actions";
+import { SurveyFormBuilder } from "@/components/survey-form-builder";
 import {
-  ADD_QUESTION_LABEL,
-  QUESTION_CONTENT_LABEL,
-  QUESTION_LIST_LABEL,
-  QUESTION_TITLE_LABEL,
   SURVEY_BASIC_EDIT_SECTION_LABEL,
   SURVEY_CUSTOMER_MANAGE_SECTION_LABEL,
   SURVEY_DATETIME_LABEL,
@@ -22,13 +19,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 
-type QuestionRow = {
-  id: string;
-  title: string;
-  overview: string;
-  orderIndex: number;
-};
-
 type CustomerRow = {
   id: string;
   name: string;
@@ -38,145 +28,15 @@ type CustomerRow = {
 function SectionCard({
   title,
   children,
-  className = "",
 }: {
   title: string;
   children: React.ReactNode;
-  className?: string;
 }) {
   return (
-    <section
-      className={`rounded-xl border border-zinc-200 bg-white p-5 ${className}`}
-    >
+    <section className="rounded-xl border border-zinc-200 bg-white p-5">
       <h2 className="mb-4 text-lg font-semibold text-zinc-900">{title}</h2>
       {children}
     </section>
-  );
-}
-
-function QuestionTable({
-  rows,
-  editingId,
-  editTitle,
-  editOverview,
-  onEditStart,
-  onEditCancel,
-  onEditTitleChange,
-  onEditOverviewChange,
-  onEditSave,
-  onDelete,
-}: {
-  rows: QuestionRow[];
-  editingId: string | null;
-  editTitle: string;
-  editOverview: string;
-  onEditStart: (row: QuestionRow) => void;
-  onEditCancel: () => void;
-  onEditTitleChange: (v: string) => void;
-  onEditOverviewChange: (v: string) => void;
-  onEditSave: (id: string) => void;
-  onDelete: (id: string) => void;
-}) {
-  return (
-    <div className="overflow-x-auto rounded-lg border border-zinc-200">
-      <table className="min-w-full text-sm">
-        <thead className="border-b border-zinc-200 bg-zinc-50 text-left">
-          <tr>
-            <th className="w-12 px-4 py-3">순번</th>
-            <th className="px-4 py-3">{QUESTION_TITLE_LABEL}</th>
-            <th className="px-4 py-3">{QUESTION_CONTENT_LABEL}</th>
-            <th className="px-4 py-3">첨부</th>
-            <th className="w-32 px-4 py-3">관리</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
-                등록된 질문 문항이 없습니다.
-              </td>
-            </tr>
-          ) : (
-            rows.map((row, index) => {
-              const isEditing = editingId === row.id;
-              return (
-                <tr key={row.id} className="border-b border-zinc-100">
-                  <td className="px-4 py-3">{index + 1}</td>
-                  <td className="px-4 py-3">
-                    {isEditing ? (
-                      <input
-                        value={editTitle}
-                        onChange={(e) => onEditTitleChange(e.target.value)}
-                        className="w-full rounded border border-zinc-300 px-2 py-1 text-sm"
-                      />
-                    ) : (
-                      <span className="font-medium">{row.title}</span>
-                    )}
-                  </td>
-                  <td className="max-w-md px-4 py-3">
-                    {isEditing ? (
-                      <textarea
-                        value={editOverview}
-                        onChange={(e) => onEditOverviewChange(e.target.value)}
-                        rows={2}
-                        className="w-full rounded border border-zinc-300 px-2 py-1 text-sm"
-                      />
-                    ) : (
-                      <span className="line-clamp-2">{row.overview}</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/presentations/${row.id}/prep`}
-                      className="text-blue-600 hover:underline"
-                    >
-                      PDF
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3">
-                    {isEditing ? (
-                      <div className="flex gap-1">
-                        <button
-                          type="button"
-                          onClick={() => onEditSave(row.id)}
-                          className="rounded border border-blue-200 px-2 py-0.5 text-xs text-blue-700 hover:bg-blue-50"
-                        >
-                          저장
-                        </button>
-                        <button
-                          type="button"
-                          onClick={onEditCancel}
-                          className="rounded border border-zinc-200 px-2 py-0.5 text-xs hover:bg-zinc-50"
-                        >
-                          취소
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-1">
-                        <button
-                          type="button"
-                          onClick={() => onEditStart(row)}
-                          className="rounded border border-zinc-200 px-2 py-0.5 text-xs hover:bg-zinc-50"
-                        >
-                          편집
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDelete(row.id)}
-                          className="rounded border border-red-200 px-2 py-0.5 text-xs text-red-700 hover:bg-red-50"
-                        >
-                          삭제
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
@@ -238,23 +98,16 @@ export default function EvaluationEditPage() {
   const courseId = params.id as string;
   const [courseName, setCourseName] = useState("");
   const [courseJoinUrl, setCourseJoinUrl] = useState("");
-  const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
-  const [questionTitle, setQuestionTitle] = useState("");
-  const [questionOverview, setQuestionOverview] = useState("");
   const [customerName, setCustomerName] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editOverview, setEditOverview] = useState("");
   const [editName, setEditName] = useState("");
   const [editDateTime, setEditDateTime] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const [courseRes, questionsRes, customersRes] = await Promise.all([
+    const [courseRes, customersRes] = await Promise.all([
       fetch(`/api/courses/${courseId}`),
-      fetch(`/api/courses/${courseId}/questions`),
       fetch(`/api/courses/${courseId}/observers`),
     ]);
 
@@ -266,23 +119,12 @@ export default function EvaluationEditPage() {
       setCourseJoinUrl(json.course.joinUrl ?? "");
     } else {
       const json = await parseJsonResponse<{ error?: string }>(courseRes);
-      setError(json?.error ?? `${SURVEY_INFO_LABEL}를 불러오지 못했습니다.`);
-    }
-    if (questionsRes.ok) {
-      const list = await questionsRes.json();
-      setQuestions(
-        list.map((q: QuestionRow) => ({
-          id: q.id,
-          title: q.title ?? "",
-          overview: q.overview ?? "",
-          orderIndex: q.orderIndex,
-        }))
-      );
+      setError(json?.error ?? "조사 정보를 불러오지 못했습니다.");
     }
     if (customersRes.ok) {
       const list = await customersRes.json();
       setCustomers(
-        list.map((o: { id: string; name: string; email: string | null }) => ({
+        list.map((o: CustomerRow) => ({
           id: o.id,
           name: o.name,
           email: o.email,
@@ -309,59 +151,6 @@ export default function EvaluationEditPage() {
     (status === "authenticated" && !canManageCourse(session?.user?.role ?? ""))
   ) {
     return <div className="mx-auto max-w-6xl px-4 py-10">불러오는 중...</div>;
-  }
-
-  async function addQuestion(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    const res = await fetch(`/api/courses/${courseId}/questions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: questionTitle,
-        overview: questionOverview,
-      }),
-    });
-    const json = await parseJsonResponse<{ error?: string }>(res);
-    if (!res.ok) {
-      setError(json?.error ?? "질문 등록 실패");
-      return;
-    }
-    setQuestionTitle("");
-    setQuestionOverview("");
-    load();
-  }
-
-  async function saveQuestionEdit(id: string) {
-    setError("");
-    const res = await fetch(`/api/courses/${courseId}/questions/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: editTitle, overview: editOverview }),
-    });
-    const json = await parseJsonResponse<{ error?: string }>(res);
-    if (!res.ok) {
-      setError(json?.error ?? "질문 수정 실패");
-      return;
-    }
-    setEditingId(null);
-    load();
-  }
-
-  async function deleteQuestion(questionId: string) {
-    if (!window.confirm("이 질문 문항을 삭제할까요? 관련 의견 기록도 함께 삭제됩니다.")) {
-      return;
-    }
-    setError("");
-    const res = await fetch(`/api/courses/${courseId}/questions/${questionId}`, {
-      method: "DELETE",
-    });
-    const json = await parseJsonResponse<{ error?: string }>(res);
-    if (!res.ok) {
-      setError(json?.error ?? "삭제 실패");
-      return;
-    }
-    load();
   }
 
   async function addCustomer(e: React.FormEvent) {
@@ -444,7 +233,7 @@ export default function EvaluationEditPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-4xl px-4 py-10">
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">{SURVEY_EDIT_LABEL}</h1>
@@ -532,49 +321,10 @@ export default function EvaluationEditPage() {
         </SectionCard>
 
         <SectionCard title={SURVEY_QUESTION_EDIT_SECTION_LABEL}>
-          <form
-            onSubmit={addQuestion}
-            className="mb-4 space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4"
-          >
-            <p className="text-sm font-medium">{ADD_QUESTION_LABEL}</p>
-            <input
-              placeholder={QUESTION_TITLE_LABEL}
-              required
-              value={questionTitle}
-              onChange={(e) => setQuestionTitle(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-            <textarea
-              placeholder={QUESTION_CONTENT_LABEL}
-              required
-              rows={3}
-              value={questionOverview}
-              onChange={(e) => setQuestionOverview(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-            <button
-              type="submit"
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800"
-            >
-              {ADD_QUESTION_LABEL}
-            </button>
-          </form>
-          <QuestionTable
-            rows={questions}
-            editingId={editingId}
-            editTitle={editTitle}
-            editOverview={editOverview}
-            onEditStart={(row) => {
-              setEditingId(row.id);
-              setEditTitle(row.title);
-              setEditOverview(row.overview);
-            }}
-            onEditCancel={() => setEditingId(null)}
-            onEditTitleChange={setEditTitle}
-            onEditOverviewChange={setEditOverview}
-            onEditSave={saveQuestionEdit}
-            onDelete={deleteQuestion}
-          />
+          <p className="mb-4 text-sm text-zinc-600">
+            구글 폼과 같이 섹션을 나누고 문항 유형을 선택해 조사 내용을 구성합니다.
+          </p>
+          <SurveyFormBuilder courseId={courseId} />
         </SectionCard>
       </div>
     </div>
