@@ -1,5 +1,6 @@
 "use client";
 
+import { CourseDashboardHeader } from "@/components/course-dashboard-header";
 import {
   isChoiceType,
   parseSurveyItemOptions,
@@ -77,21 +78,30 @@ export function SurveyProfessorOverview({ course }: { course: CourseInfo }) {
 
   if (sections.length === 0) {
     return (
-      <p className="py-10 text-center text-zinc-500">
-        등록된 조사 문항이 없습니다. 편집 화면에서 섹션과 문항을 추가해주세요.
-      </p>
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <CourseDashboardHeader
+          courseId={course.id}
+          name={course.name}
+          semester={course.semester}
+          showManageNav
+        />
+        <p className="py-10 text-center text-zinc-500">
+          등록된 조사 문항이 없습니다. 우측「조사 문항 편집」에서 섹션과 문항을
+          추가해주세요.
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
-      <div>
-        <h1 className="text-2xl font-bold">{course.name}</h1>
-        <p className="mt-1 text-zinc-600">{course.semester}</p>
-        <p className="mt-2 text-sm text-zinc-500">
-          응답 고객 {respondentCount}명 · 문항 응답 {responses.length}건
-        </p>
-      </div>
+      <CourseDashboardHeader
+        courseId={course.id}
+        name={course.name}
+        semester={course.semester}
+        subtitle={`응답 고객 ${respondentCount}명 · 문항 응답 ${responses.length}건`}
+        showManageNav
+      />
 
       {sections.map((section) => (
         <div

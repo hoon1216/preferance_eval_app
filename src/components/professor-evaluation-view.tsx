@@ -58,6 +58,7 @@ import {
   LEFT_LIST_GRID,
   ROW_MIN,
 } from "@/lib/evaluation-ui";
+import { CourseDashboardHeader } from "@/components/course-dashboard-header";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -161,30 +162,17 @@ export function ProfessorEvaluationView({
     });
   }
 
-  const tableActionBtn =
-    "rounded-full border-2 border-zinc-800 px-4 py-1 text-xs font-semibold hover:bg-zinc-50";
+  const subtitle = professorName ? `담당자 ${professorName}` : undefined;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{course.name}</h1>
-          <p className="mt-1 text-zinc-600">{course.semester}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {professorName && (
-            <span className="text-sm text-zinc-700">담당자 {professorName}</span>
-          )}
-          {showEditButton && (
-            <Link
-              href={`/dashboard/courses/${courseId}/edit`}
-              className={tableActionBtn}
-            >
-              편집
-            </Link>
-          )}
-        </div>
-      </div>
+      <CourseDashboardHeader
+        courseId={courseId}
+        name={course.name}
+        semester={course.semester}
+        subtitle={subtitle}
+        showManageNav={showEditButton}
+      />
 
       <div className="mb-4 flex flex-wrap justify-end gap-2">
         <a

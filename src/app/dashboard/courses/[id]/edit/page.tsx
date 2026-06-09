@@ -1,190 +1,47 @@
 "use client";
 
 import { LinkActions } from "@/components/link-actions";
-import { SurveyFormBuilder } from "@/components/survey-form-builder";
+import { CourseEditLayout } from "@/components/course-edit-layout";
 import {
   SURVEY_BASIC_EDIT_SECTION_LABEL,
-  SURVEY_CUSTOMER_MANAGE_SECTION_LABEL,
   SURVEY_DATETIME_LABEL,
-  SURVEY_EDIT_LABEL,
   SURVEY_INFO_LABEL,
   SURVEY_NAME_LABEL,
-  SURVEY_QUESTION_EDIT_SECTION_LABEL,
 } from "@/lib/ui-labels";
-import { displayOrUnregistered } from "@/lib/default-password";
-import { canManageCourse } from "@/lib/permissions";
 import { parseJsonResponse } from "@/lib/parse-json-response";
-import Link from "next/link";
+import { useProfessorCourseGuard } from "@/lib/use-professor-course-guard";
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 
-type CustomerRow = {
-  id: string;
-  name: string;
-  email: string | null;
-};
-
-function SectionCard({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-5">
-      <h2 className="mb-4 text-lg font-semibold text-zinc-900">{title}</h2>
-      {children}
-    </section>
-  );
-}
-
-function CustomerTable({
-  rows,
-  onDelete,
-}: {
-  rows: CustomerRow[];
-  onDelete: (id: string) => void;
-}) {
-  return (
-    <div className="overflow-x-auto rounded-lg border border-zinc-200">
-      <table className="min-w-full text-sm">
-        <thead className="border-b border-zinc-200 bg-zinc-50 text-left">
-          <tr>
-            <th className="w-12 px-4 py-3">순번</th>
-            <th className="px-4 py-3">이름</th>
-            <th className="px-4 py-3">이메일</th>
-            <th className="w-20 px-4 py-3">관리</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 ? (
-            <tr>
-              <td colSpan={4} className="px-4 py-8 text-center text-zinc-500">
-                등록된 참여 고객이 없습니다.
-              </td>
-            </tr>
-          ) : (
-            rows.map((row, index) => (
-              <tr key={row.id} className="border-b border-zinc-100">
-                <td className="px-4 py-3">{index + 1}</td>
-                <td className="px-4 py-3 font-medium">{row.name}</td>
-                <td className="px-4 py-3">
-                  {displayOrUnregistered(row.email)}
-                </td>
-                <td className="px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => onDelete(row.id)}
-                    className="rounded border border-red-200 px-2 py-0.5 text-xs text-red-700 hover:bg-red-50"
-                  >
-                    삭제
-                  </button>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-export default function EvaluationEditPage() {
+export default function CourseBasicEditPage() {
   const params = useParams();
   const router = useRouter();
-  const { data: session, status } = useSession();
   const courseId = params.id as string;
+  const { loading: guardLoading } = useProfessorCourseGuard(courseId);
   const [courseName, setCourseName] = useState("");
   const [courseJoinUrl, setCourseJoinUrl] = useState("");
-  const [customers, setCustomers] = useState<CustomerRow[]>([]);
-  const [customerName, setCustomerName] = useState("");
   const [editName, setEditName] = useState("");
   const [editDateTime, setEditDateTime] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const [courseRes, customersRes] = await Promise.all([
-      fetch(`/api/courses/${courseId}`),
-      fetch(`/api/courses/${courseId}/observers`),
-    ]);
-
-    if (courseRes.ok) {
-      const json = await courseRes.json();
+    const res = await fetch(`/api/courses/${courseId}`);
+    if (res.ok) {
+      const json = await res.json();
       setCourseName(json.course.name ?? "");
       setEditName(json.course.name ?? "");
       setEditDateTime(json.course.semester ?? "");
       setCourseJoinUrl(json.course.joinUrl ?? "");
     } else {
-      const json = await parseJsonResponse<{ error?: string }>(courseRes);
+      const json = await parseJsonResponse<{ error?: string }>(res);
       setError(json?.error ?? "조사 정보를 불러오지 못했습니다.");
-    }
-    if (customersRes.ok) {
-      const list = await customersRes.json();
-      setCustomers(
-        list.map((o: CustomerRow) => ({
-          id: o.id,
-          name: o.name,
-          email: o.email,
-        }))
-      );
     }
   }, [courseId]);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
-    if (!canManageCourse(session?.user?.role ?? "")) {
-      router.replace(`/dashboard/courses/${courseId}`);
-    }
-  }, [status, session, router, courseId]);
-
-  useEffect(() => {
-    if (status === "authenticated" && canManageCourse(session?.user?.role ?? "")) {
-      load();
-    }
-  }, [load, status, session?.user?.role]);
-
-  if (
-    status === "loading" ||
-    (status === "authenticated" && !canManageCourse(session?.user?.role ?? ""))
-  ) {
-    return <div className="mx-auto max-w-6xl px-4 py-10">불러오는 중...</div>;
-  }
-
-  async function addCustomer(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    const res = await fetch(`/api/courses/${courseId}/observers`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: customerName }),
-    });
-    const json = await parseJsonResponse<{ error?: string }>(res);
-    if (!res.ok) {
-      setError(json?.error ?? "고객 등록 실패");
-      return;
-    }
-    setCustomerName("");
-    load();
-  }
-
-  async function deleteCustomer(customerId: string) {
-    if (!window.confirm("이 참여 고객을 목록에서 삭제할까요?")) {
-      return;
-    }
-    setError("");
-    const res = await fetch(`/api/courses/${courseId}/observers/${customerId}`, {
-      method: "DELETE",
-    });
-    const json = await parseJsonResponse<{ error?: string }>(res);
-    if (!res.ok) {
-      setError(json?.error ?? "삭제 실패");
-      return;
-    }
-    load();
-  }
+    if (!guardLoading) load();
+  }, [load, guardLoading]);
 
   async function saveAndReturn() {
     if (!editName.trim() || !editDateTime.trim()) {
@@ -212,33 +69,20 @@ export default function EvaluationEditPage() {
     router.refresh();
   }
 
-  if (!courseName && !editName) {
+  if (guardLoading || (!courseName && !editName && !error)) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        {error ? (
-          <>
-            <p className="text-red-600">{error}</p>
-            <p className="mt-2 text-sm text-zinc-600">
-              개발 서버를 중지한 뒤{" "}
-              <code className="rounded bg-zinc-100 px-1">npm run db:push</code> 와{" "}
-              <code className="rounded bg-zinc-100 px-1">npm run db:generate</code>를
-              실행하고 서버를 다시 시작해 주세요.
-            </p>
-          </>
-        ) : (
-          "불러오는 중..."
-        )}
+      <div className="mx-auto max-w-4xl px-4 py-10">
+        {error ? <p className="text-red-600">{error}</p> : "불러오는 중..."}
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{SURVEY_EDIT_LABEL}</h1>
-          <p className="mt-1 text-zinc-600">{courseName}</p>
-        </div>
+    <CourseEditLayout
+      courseId={courseId}
+      title={SURVEY_BASIC_EDIT_SECTION_LABEL}
+      courseName={courseName}
+      action={
         <button
           type="button"
           onClick={saveAndReturn}
@@ -247,86 +91,45 @@ export default function EvaluationEditPage() {
         >
           {saving ? "저장 중..." : `${SURVEY_INFO_LABEL} 저장`}
         </button>
-      </div>
-
+      }
+    >
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
-      <div className="space-y-8">
-        <SectionCard title={SURVEY_BASIC_EDIT_SECTION_LABEL}>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div>
-              <label className="text-sm font-medium">{SURVEY_NAME_LABEL}</label>
-              <input
-                placeholder={SURVEY_NAME_LABEL}
-                required
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">{SURVEY_DATETIME_LABEL}</label>
-              <input
-                placeholder={SURVEY_DATETIME_LABEL}
-                required
-                value={editDateTime}
-                onChange={(e) => setEditDateTime(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-              />
+      <section className="rounded-xl border border-zinc-200 bg-white p-5">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <label className="text-sm font-medium">{SURVEY_NAME_LABEL}</label>
+            <input
+              placeholder={SURVEY_NAME_LABEL}
+              required
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">{SURVEY_DATETIME_LABEL}</label>
+            <input
+              placeholder={SURVEY_DATETIME_LABEL}
+              required
+              value={editDateTime}
+              onChange={(e) => setEditDateTime(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+        {courseJoinUrl && (
+          <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+            <p className="text-sm font-semibold">접속 링크</p>
+            <p className="mt-2 break-all font-mono text-xs text-zinc-700">
+              {courseJoinUrl}
+            </p>
+            <div className="mt-3">
+              <LinkActions url={courseJoinUrl} label={editName || courseName} />
             </div>
           </div>
-          {courseJoinUrl && (
-            <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-              <p className="text-sm font-semibold">접속 링크</p>
-              <p className="mt-2 break-all font-mono text-xs text-zinc-700">
-                {courseJoinUrl}
-              </p>
-              <div className="mt-3">
-                <LinkActions url={courseJoinUrl} label={editName || courseName} />
-              </div>
-            </div>
-          )}
-        </SectionCard>
-
-        <SectionCard title={SURVEY_CUSTOMER_MANAGE_SECTION_LABEL}>
-          <p className="mb-4 text-sm text-zinc-600">
-            참여 고객은{" "}
-            <Link href="/login/customer" className="text-emerald-700 hover:underline">
-              고객 접속 화면
-            </Link>
-            에서 등록된 이름만 입력해 접속합니다.
-          </p>
-          <form
-            onSubmit={addCustomer}
-            className="mb-4 flex flex-wrap items-end gap-2"
-          >
-            <div className="min-w-[200px] flex-1">
-              <label className="text-sm font-medium">고객 추가 (이름만)</label>
-              <input
-                placeholder="참여 고객 이름"
-                required
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <button
-              type="submit"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-            >
-              고객 추가
-            </button>
-          </form>
-          <CustomerTable rows={customers} onDelete={deleteCustomer} />
-        </SectionCard>
-
-        <SectionCard title={SURVEY_QUESTION_EDIT_SECTION_LABEL}>
-          <p className="mb-4 text-sm text-zinc-600">
-            구글 폼과 같이 섹션을 나누고 문항 유형을 선택해 조사 내용을 구성합니다.
-          </p>
-          <SurveyFormBuilder courseId={courseId} />
-        </SectionCard>
-      </div>
-    </div>
+        )}
+      </section>
+    </CourseEditLayout>
   );
 }
