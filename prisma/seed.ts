@@ -5,9 +5,18 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const demoCustomers = ["이고객", "박고객", "최고객"];
+const demoCustomers = [
+  { name: "이고객", gender: "FEMALE" as const, age: 28 },
+  { name: "박고객", gender: "MALE" as const, age: 35 },
+  { name: "최고객", gender: "FEMALE" as const, age: 42 },
+];
 
-async function upsertCustomer(passwordHash: string, name: string) {
+async function upsertCustomer(
+  passwordHash: string,
+  name: string,
+  gender: "MALE" | "FEMALE" | "OTHER",
+  age: number
+) {
   const existing = await prisma.user.findFirst({
     where: { role: "OBSERVER_PROFESSOR", name },
   });
@@ -15,7 +24,7 @@ async function upsertCustomer(passwordHash: string, name: string) {
   if (existing) {
     return prisma.user.update({
       where: { id: existing.id },
-      data: { profileComplete: true, passwordHash },
+      data: { profileComplete: true, passwordHash, gender },
     });
   }
 
@@ -25,6 +34,7 @@ async function upsertCustomer(passwordHash: string, name: string) {
       role: "OBSERVER_PROFESSOR",
       passwordHash,
       profileComplete: true,
+      gender,
     },
   });
 }
@@ -45,7 +55,9 @@ async function main() {
   });
 
   const customers = await Promise.all(
-    demoCustomers.map((name) => upsertCustomer(passwordHash, name))
+    demoCustomers.map((c) =>
+      upsertCustomer(passwordHash, c.name, c.gender, c.age)
+    )
   );
 
   const course = await prisma.course.upsert({
@@ -59,14 +71,20 @@ async function main() {
     },
   });
 
-  for (const customer of customers) {
+  for (let i = 0; i < customers.length; i++) {
+    const customer = customers[i];
+    const demo = demoCustomers[i];
     const existingSlot = await prisma.courseObserver.findFirst({
       where: { courseId: course.id, name: customer.name },
     });
     if (existingSlot) {
       await prisma.courseObserver.update({
         where: { id: existingSlot.id },
-        data: { userId: customer.id },
+        data: {
+          userId: customer.id,
+          gender: demo.gender,
+          age: demo.age,
+        },
       });
     } else {
       await prisma.courseObserver.create({
@@ -74,6 +92,8 @@ async function main() {
           courseId: course.id,
           name: customer.name,
           userId: customer.id,
+          gender: demo.gender,
+          age: demo.age,
         },
       });
     }

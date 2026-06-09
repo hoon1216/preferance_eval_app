@@ -95,6 +95,8 @@ model CourseObserver {
   courseId    String
   name        String
   department  String?
+  gender      Gender?
+  age         Int?
   accessToken String?  @unique
   userId      String?
   createdAt   DateTime @default(now())

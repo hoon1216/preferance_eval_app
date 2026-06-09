@@ -5,9 +5,11 @@ import {
   type CustomerRow,
 } from "@/components/course-customer-table";
 import { CourseEditLayout } from "@/components/course-edit-layout";
+import { GENDER_OPTIONS } from "@/lib/gender-labels";
 import { SURVEY_CUSTOMER_MANAGE_SECTION_LABEL } from "@/lib/ui-labels";
 import { parseJsonResponse } from "@/lib/parse-json-response";
 import { useProfessorCourseGuard } from "@/lib/use-professor-course-guard";
+import type { Gender } from "@prisma/client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -19,6 +21,8 @@ export default function CourseCustomersPage() {
   const [courseName, setCourseName] = useState("");
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [customerName, setCustomerName] = useState("");
+  const [customerGender, setCustomerGender] = useState<Gender | "">("");
+  const [customerAge, setCustomerAge] = useState("");
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -37,7 +41,8 @@ export default function CourseCustomersPage() {
         list.map((o: CustomerRow) => ({
           id: o.id,
           name: o.name,
-          email: o.email,
+          gender: o.gender,
+          age: o.age,
         }))
       );
     }
@@ -53,7 +58,11 @@ export default function CourseCustomersPage() {
     const res = await fetch(`/api/courses/${courseId}/observers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: customerName }),
+      body: JSON.stringify({
+        name: customerName,
+        gender: customerGender,
+        age: customerAge,
+      }),
     });
     const json = await parseJsonResponse<{ error?: string }>(res);
     if (!res.ok) {
@@ -61,6 +70,8 @@ export default function CourseCustomersPage() {
       return;
     }
     setCustomerName("");
+    setCustomerGender("");
+    setCustomerAge("");
     load();
   }
 
@@ -102,13 +113,44 @@ export default function CourseCustomersPage() {
           onSubmit={addCustomer}
           className="mb-4 flex flex-wrap items-end gap-2"
         >
-          <div className="min-w-[200px] flex-1">
-            <label className="text-sm font-medium">고객 추가 (이름만)</label>
+          <div className="min-w-[160px] flex-1">
+            <label className="text-sm font-medium">이름</label>
             <input
               placeholder="참여 고객 이름"
               required
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="min-w-[100px]">
+            <label className="text-sm font-medium">성별</label>
+            <select
+              required
+              value={customerGender}
+              onChange={(e) =>
+                setCustomerGender(e.target.value as Gender | "")
+              }
+              className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            >
+              <option value="">선택</option>
+              {GENDER_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="min-w-[100px]">
+            <label className="text-sm font-medium">연령</label>
+            <input
+              type="number"
+              min={1}
+              max={120}
+              required
+              placeholder="세"
+              value={customerAge}
+              onChange={(e) => setCustomerAge(e.target.value)}
               className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             />
           </div>

@@ -2,6 +2,7 @@
 
 import { CourseDashboardHeader } from "@/components/course-dashboard-header";
 import { CourseDashboardSection } from "@/components/course-dashboard-section";
+import { CustomerDemographicsSummary } from "@/components/customer-demographics-summary";
 import {
   isChoiceType,
   parseSurveyItemOptions,
@@ -11,7 +12,7 @@ import {
   PARTICIPANT_CUSTOMERS_LABEL,
   SURVEY_CONTENT_SECTION_LABEL,
 } from "@/lib/ui-labels";
-import type { SurveyItemType } from "@prisma/client";
+import type { Gender, SurveyItemType } from "@prisma/client";
 import { useCallback, useEffect, useState } from "react";
 
 type CourseInfo = {
@@ -30,6 +31,8 @@ type ResponseRow = {
 type CustomerRow = {
   id: string;
   name: string;
+  gender: Gender | null;
+  age: number | null;
 };
 
 function formatValue(value: unknown): string {
@@ -80,7 +83,12 @@ export function SurveyProfessorOverview({ course }: { course: CourseInfo }) {
     if (customersRes.ok) {
       const list = await customersRes.json();
       setCustomers(
-        list.map((o: CustomerRow) => ({ id: o.id, name: o.name }))
+        list.map((o: CustomerRow) => ({
+          id: o.id,
+          name: o.name,
+          gender: o.gender,
+          age: o.age,
+        }))
       );
     }
     setLoading(false);
@@ -106,24 +114,7 @@ export function SurveyProfessorOverview({ course }: { course: CourseInfo }) {
         title={PARTICIPANT_CUSTOMERS_LABEL}
         editHref={`/dashboard/courses/${course.id}/customers`}
       >
-        {customers.length === 0 ? (
-          <p className="text-sm text-zinc-500">등록된 참여 고객이 없습니다.</p>
-        ) : (
-          <ul className="divide-y divide-zinc-100">
-            {customers.map((customer, index) => (
-              <li
-                key={customer.id}
-                className="flex items-center gap-3 py-2 text-sm text-zinc-900"
-              >
-                <span className="w-6 text-zinc-400">{index + 1}</span>
-                <span className="font-medium">{customer.name}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="mt-3 text-xs text-zinc-500">
-          총 {customers.length}명
-        </p>
+        <CustomerDemographicsSummary customers={customers} />
       </CourseDashboardSection>
 
       <CourseDashboardSection

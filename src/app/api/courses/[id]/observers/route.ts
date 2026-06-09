@@ -1,4 +1,8 @@
 import { auth } from "@/lib/auth";
+import {
+  parseCustomerAge,
+  parseCustomerGender,
+} from "@/lib/customer-demographics";
 import { hashInitialPassword } from "@/lib/default-password";
 import { normalizeParticipantName } from "@/lib/participant-name";
 import { canManageCourse } from "@/lib/permissions";
@@ -21,9 +25,22 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const name = normalizeParticipantName(String((await request.json()).name ?? ""));
+  const body = await request.json();
+  const name = normalizeParticipantName(String(body.name ?? ""));
+  const gender = parseCustomerGender(body.gender);
+  const age = parseCustomerAge(body.age);
+
   if (!name) {
     return NextResponse.json({ error: "이름을 입력해주세요." }, { status: 400 });
+  }
+  if (!gender) {
+    return NextResponse.json({ error: "성별을 선택해주세요." }, { status: 400 });
+  }
+  if (age === null) {
+    return NextResponse.json(
+      { error: "연령을 1~120 사이의 숫자로 입력해주세요." },
+      { status: 400 }
+    );
   }
 
   try {
@@ -35,12 +52,15 @@ export async function POST(request: Request, { params }: Params) {
         role: "OBSERVER_PROFESSOR",
         passwordHash,
         profileComplete: true,
+        gender,
       },
     });
     const observer = await prisma.courseObserver.create({
       data: {
         courseId,
         name,
+        gender,
+        age,
         userId: user.id,
         accessToken: randomUUID(),
       },
@@ -70,9 +90,6 @@ export async function GET(_request: Request, { params }: Params) {
 
   const observers = await prisma.courseObserver.findMany({
     where: { courseId },
-    include: {
-      user: { select: { email: true } },
-    },
     orderBy: { name: "asc" },
   });
 
@@ -91,7 +108,8 @@ export async function GET(_request: Request, { params }: Params) {
         id: o.id,
         name: o.name,
         department: o.department,
-        email: o.user?.email ?? null,
+        gender: o.gender,
+        age: o.age,
         userId: o.userId,
       };
     })

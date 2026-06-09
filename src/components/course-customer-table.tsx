@@ -1,11 +1,13 @@
 "use client";
 
-import { displayOrUnregistered } from "@/lib/default-password";
+import { formatGender } from "@/lib/gender-labels";
+import type { Gender } from "@prisma/client";
 
 export type CustomerRow = {
   id: string;
   name: string;
-  email: string | null;
+  gender: Gender | null;
+  age: number | null;
 };
 
 export function CourseCustomerTable({
@@ -22,14 +24,15 @@ export function CourseCustomerTable({
           <tr>
             <th className="w-12 px-4 py-3">순번</th>
             <th className="px-4 py-3">이름</th>
-            <th className="px-4 py-3">이메일</th>
+            <th className="w-20 px-4 py-3">성별</th>
+            <th className="w-20 px-4 py-3">연령</th>
             <th className="w-20 px-4 py-3">관리</th>
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={4} className="px-4 py-8 text-center text-zinc-500">
+              <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
                 등록된 참여 고객이 없습니다.
               </td>
             </tr>
@@ -38,8 +41,9 @@ export function CourseCustomerTable({
               <tr key={row.id} className="border-b border-zinc-100">
                 <td className="px-4 py-3">{index + 1}</td>
                 <td className="px-4 py-3 font-medium">{row.name}</td>
+                <td className="px-4 py-3">{formatGender(row.gender)}</td>
                 <td className="px-4 py-3">
-                  {displayOrUnregistered(row.email)}
+                  {row.age != null ? `${row.age}세` : "—"}
                 </td>
                 <td className="px-4 py-3">
                   <button
